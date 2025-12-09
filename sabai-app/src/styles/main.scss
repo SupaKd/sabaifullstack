@@ -1,0 +1,26 @@
+// Variables et mixins
+@import 'base/variables';
+@import 'base/mixins';
+
+// Base
+@import 'base/base';
+
+// Components
+@import 'components/navbar';
+@import 'components/cart-item';
+@import 'components/footer';
+@import 'components/hero';
+
+
+// Pages
+@import 'client/home';
+@import 'client/cart';
+@import 'client/checkout';
+@import 'client/status';
+
+// Admin Page Specific Styles
+@import 'restaurateur/login';
+@import 'restaurateur/admin';
+@import 'restaurateur/orders';
+@import 'restaurateur/product';
+@import 'restaurateur/horaire';

@@ -1,0 +1,62 @@
+// Responsive breakpoints
+@mixin respond-to($breakpoint) {
+    @if $breakpoint == 'sm' {
+      @media (min-width: $breakpoint-sm) { @content; }
+    }
+    @if $breakpoint == 'md' {
+      @media (min-width: $breakpoint-md) { @content; }
+    }
+    @if $breakpoint == 'lg' {
+      @media (min-width: $breakpoint-lg) { @content; }
+    }
+    @if $breakpoint == 'xl' {
+      @media (min-width: $breakpoint-xl) { @content; }
+    }
+  }
+  
+  // Flexbox center
+  @mixin flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  // Grid layout
+  @mixin grid-auto($min-width: 280px, $gap: $spacing-lg) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax($min-width, 1fr));
+    gap: $gap;
+  }
+  
+  // Truncate text
+  @mixin truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  // Button base
+  @mixin button-base {
+    padding: $spacing-sm $spacing-lg;
+    border: none;
+    border-radius: $radius-md;
+    font-size: $font-size-base;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all $transition-base;
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+  
+  // Card shadow hover
+  @mixin card-hover {
+    transition: transform $transition-base, box-shadow $transition-base;
+    
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: $shadow-lg;
+    }
+  }

@@ -1,0 +1,248 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background: $primary-light;
+  z-index: 1000;
+  font-family: $font-primary;
+  box-shadow: $shadow-md;
+  transition: background $transition-base;
+
+  &__container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: $spacing-sm $spacing-lg;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Logo */
+  &__logo img {
+    height: 50px;
+    transition: transform $transition-base;
+
+    &:hover {
+      transform: scale(1.08) rotate(-3deg);
+    }
+  }
+
+  /* Actions à droite (panier + burger) */
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+
+    /* Lien panier */
+    .navbar__cart-link {
+      position: relative;
+      color: $primary-dark;
+      font-size: $font-size-xl;
+      transition: color $transition-base;
+      margin: 1rem;
+
+      @media screen and (min-width: 992px) {
+        margin: 0;
+      }
+
+      &:hover {
+        color:#ff6b35 ;
+
+      }
+
+      .navbar__cart-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background: $primary-color;
+        color: $primary-light;
+        font-size: 0.6rem;
+        font-weight: 700;
+        padding: 1px 7px;
+        border-radius: $radius-full;
+        animation: badge-pop 0.5s ease;
+      }
+    }
+
+    /* Burger */
+    .navbar__burger {
+      background: none;
+      border: none;
+      color: $primary-dark;
+      font-size: $font-size-2xl;
+      cursor: pointer;
+      transition: transform $transition-base;
+
+      &--open {
+        transform: rotate(90deg);
+        z-index: 9999;
+      }
+    }
+  }
+
+  /* Menu déroulant */
+  &__menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 200px;
+    height: 100vh;
+    background: $primary-light;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: $spacing-2xl $spacing-xl;
+    gap: $spacing-lg;
+    transition: right $transition-base;
+    overflow-y: auto;
+    z-index: 999;
+
+    &--open {
+      right: 0;
+    }
+
+    /* Effet texture moderne */
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 6px,
+        rgba(255, 255, 255, 0.04) 6px,
+        rgba(255, 255, 255, 0.04) 12px
+      );
+      pointer-events: none;
+    }
+
+    /* Links */
+    .navbar__link {
+      color: $primary-dark;
+      font-size: $font-size-lg;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+      transition: transform $transition-base, color $transition-base;
+
+      &:hover {
+        transform: translateX(6px);
+        color: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+
+      }
+
+      svg {
+        font-size: $font-size-xl;
+      }
+    }
+  }
+
+  /* Overlay fond */
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 900;
+    cursor: pointer;
+    animation: fadeIn 0.4s ease;
+  }
+}
+
+.navbar__social {
+  display: flex;
+  gap: 15px;
+
+  .navbar__social-link {
+    color: $primary-dark;
+    font-size: $font-size-xl;
+
+    &:hover {
+      background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+
+    }
+  }
+}
+
+
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes badge-pop {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ===========================================
+   Responsive Desktop : Logo | Menu | Panier
+   =========================================== */
+@media (min-width: 992px) {
+  /* Le container principal en row avec 3 zones */
+  .navbar__container {
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Le burger disparaît */
+  .navbar__burger {
+    display: none !important;
+  }
+
+  /* Menu affiché en ligne, centré */
+  .navbar__menu {
+    position: static;
+    height: auto;
+    width: auto;
+    background: transparent;
+    flex-direction: row;
+    gap: 32px;
+    padding: 0;
+    overflow: visible;
+    box-shadow: none;
+    right: 0 !important;
+  }
+
+  .navbar__menu::before {
+    display: none;
+  }
+
+  .navbar__menu .navbar__link {
+    font-size: 18px;
+    transition: color 0.3s ease;
+  }
+
+  .navbar__menu .navbar__link:hover {
+    transform: none;
+    color: $success;
+  }
+
+  /* Le panier reste à droite */
+  .navbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  /* L’overlay est inutile en desktop */
+  .navbar__overlay {
+    display: none !important;
+  }
+}

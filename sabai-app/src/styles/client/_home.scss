@@ -1,0 +1,234 @@
+.container__home {
+  margin: 2rem 1rem;
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #222;
+    margin-bottom: 1rem;
+    @media screen and (min-width: 768px) {
+      font-size: 3.5rem;
+      text-align: center;
+    }
+  }
+}
+
+/* ============================
+   DECORATION TOP
+============================ */
+.deco__top {
+  background-color: #222;
+  padding: 20rem 0rem 0rem 0rem;
+}
+/* ============================
+   FILTERS — PILL BUTTONS
+============================ */
+.home__filters {
+  display: flex;
+  gap: $spacing-xs;
+  overflow-x: auto;
+  padding: $spacing-md $spacing-xs;
+  scroll-behavior: smooth;
+  margin-bottom: $spacing-xl;
+
+  &::-webkit-scrollbar {
+    height: 0;
+  }
+}
+
+.home__filter-btn {
+  flex: 0 0 auto;
+  padding: $spacing-sm $spacing-md;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  border-radius: $radius-full;
+  background: #fff;
+  border: 1px solid #222;
+  color: #222;
+  transition: $transition-base;
+
+  &:hover {
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: $shadow-sm;
+    color: #222;
+  }
+}
+
+.home__filter-btn--active {
+  background: #222;
+  color: #fff;
+  border-color: #222;
+  box-shadow: $shadow-md;
+}
+
+/* ============================
+   GRID PRODUITS — MOBILE FIRST
+============================ */
+.home__products {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  padding: $spacing-xl 0;
+}
+
+.product-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+}
+
+.product-card__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #222;
+}
+
+.product-card__description {
+  font-size: $font-size-xs;
+  color: #222;
+}
+
+.product-card__footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.product-card__price {
+  font-size: 12px;
+  font-weight: 700;
+  color: $error;
+  margin-top: $spacing-xs;
+}
+
+.product-card__button {
+  margin-top: $spacing-xs;
+  padding: $spacing-sm;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  background: #222;
+  color: #fff;
+  border-radius: 99px;
+  border: none;
+  transition: $transition-base;
+
+  &:hover {
+    background: darken($error, 10%);
+    transform: translateY(-3px);
+  }
+}
+
+.product-card__image {
+  flex: 0 0 30%;
+  max-width: 120px;
+  border-radius: $radius-md;
+  object-fit: cover;
+}
+
+.product-card__stock-info{
+  font-size: 10px;
+  color: $warning;
+  margin-top: $spacing-xs;
+}
+
+/* ============================
+   CATÉGORIES
+============================ */
+#menu {
+  scroll-margin-top: 90px;
+}
+
+.home__category-section {
+  margin-bottom: $spacing-2xl;
+  &:last-of-type {
+    margin-bottom: $spacing-xl;
+  }
+}
+
+.home__category-title {
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  font-weight: 800;
+  color: #222;
+  margin-bottom: $spacing-lg;
+  padding-left: $spacing-sm;
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 4px;
+    background: $error;
+    border-radius: $radius-sm;
+  }
+}
+
+.home__category-section .home__products {
+  padding-top: $spacing-xs;
+}
+
+/* ============================
+   IMAGE OVERLAY ENTRE HERO & MENU
+============================ */
+.menu__overlay-image {
+  position: absolute;
+  top: 900px;
+  left: 80%;
+  transform: translateX(-50%);
+  width: 80px;
+  pointer-events: none;
+  z-index: -1;
+
+  @media screen and (min-width: 768px) {
+    top: 900px;
+    width: 100px;
+  }
+  @media screen and (min-width: 1024px) {
+    top: 900px;
+    width: 120px;
+  }
+  @media screen and (min-width: 1280px) {
+    top: 800px;
+    width: 130px;
+    
+  }
+}
+
+/* ============================
+   RESPONSIVE — MOBILE FIRST
+============================ */
+
+@media (min-width: 768px) {
+  .home__products {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-xl;
+  }
+  .home__filters {
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home__filter-btn {
+    font-size: $font-size-base;
+    padding: $spacing-md $spacing-lg;
+  }
+  .home__products {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .product-card {
+    justify-content: space-around;
+  }
+}

@@ -1,0 +1,744 @@
+// ===== AdminServiceHours.scss =====
+
+.admin-service-hours {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 2rem;
+}
+
+// ========================================
+// HEADER
+// ========================================
+
+.admin-service-hours__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.admin-service-hours__header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.admin-service-hours__title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+// ========================================
+// ALERTS
+// ========================================
+
+.alert {
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+
+  &--success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 2px solid #10b981;
+  }
+
+  &--error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 2px solid #ef4444;
+  }
+}
+
+.alert__close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+// ========================================
+// LAYOUT
+// ========================================
+
+.service-hours-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.service-hours-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.service-hours-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+// ========================================
+// SECTIONS
+// ========================================
+
+.service-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  &--highlight {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+  }
+}
+
+.service-section__header {
+  margin-bottom: 1.5rem;
+}
+
+.service-section__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.service-section--highlight .service-section__title {
+  color: #ffffff;
+}
+
+.service-section__subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+// ========================================
+// SERVICE TOGGLE
+// ========================================
+
+.service-toggle__control {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.switch {
+  position: relative;
+  width: 60px;
+  height: 32px;
+  flex-shrink: 0;
+
+  input {
+    display: none;
+  }
+}
+
+.switch__slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 32px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+}
+
+input:checked + .switch__slider {
+  background: rgba(255, 255, 255, 0.5);
+
+  &::before {
+    transform: translateX(28px);
+  }
+}
+
+.service-toggle__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.service-toggle__status {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+
+  &--active {
+    color: #ffffff;
+  }
+}
+
+.service-toggle__description {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+// ========================================
+// WEEKLY HOURS TABLE
+// ========================================
+
+.weekly-hours-table {
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+
+    thead {
+      background: #f9fafb;
+
+      th {
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+    }
+
+    tbody {
+      tr {
+        border-bottom: 1px solid #e5e7eb;
+
+        &:hover {
+          background: #f9fafb;
+        }
+
+        &.day-row--inactive {
+          opacity: 0.6;
+        }
+      }
+
+      td {
+        padding: 1rem;
+        font-size: 0.95rem;
+      }
+    }
+  }
+}
+
+.day-row__day {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.day-row__time {
+  color: #6b7280;
+}
+
+.time-display {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.time-input {
+  padding: 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.day-row__status {
+  text-align: center;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.375rem 0.875rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &--success {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  &--danger {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+.day-row__actions {
+  text-align: right;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+// ========================================
+// SETTINGS GRID
+// ========================================
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.setting-item__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.setting-item__icon {
+  font-size: 1.25rem;
+}
+
+.setting-item__control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.setting-item__input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.setting-item__unit {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+// ========================================
+// CLOSURE FORM
+// ========================================
+
+.closure-form {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.closure-form__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-field__label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-field__input {
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1f2937;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+}
+
+.form-field--checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+  user-select: none;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+}
+
+.form-field-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+// ========================================
+// CLOSURES LIST
+// ========================================
+
+.closures-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.closures-list__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.75rem 0;
+}
+
+.closures-list__empty {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+.closures-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.closure-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+}
+
+.closure-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  flex: 1;
+}
+
+.closure-item__date {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-transform: capitalize;
+}
+
+.closure-item__reason {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.closure-item__time {
+  font-size: 0.85rem;
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.closure-item__delete {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+// ========================================
+// BUTTONS
+// ========================================
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+
+  &--small {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  &--primary {
+    background: #3b82f6;
+    color: #ffffff;
+
+    &:hover {
+      background: #2563eb;
+    }
+  }
+
+  &--success {
+    background: #10b981;
+    color: #ffffff;
+
+    &:hover {
+      background: #059669;
+    }
+  }
+
+  &--danger {
+    background: #ef4444;
+    color: #ffffff;
+
+    &:hover {
+      background: #dc2626;
+    }
+  }
+
+  &--secondary {
+    background: #6b7280;
+    color: #ffffff;
+
+    &:hover {
+      background: #4b5563;
+    }
+  }
+
+  &--block {
+    width: 100%;
+  }
+}
+
+// ========================================
+// LOADING
+// ========================================
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  font-size: 1.1rem;
+  color: #6b7280;
+}
+
+// ========================================
+// RESPONSIVE
+// ========================================
+
+@media (max-width: 1200px) {
+  .service-hours-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .service-hours-sidebar {
+    order: 2;
+  }
+
+  .settings-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .weekly-hours-table {
+    font-size: 0.9rem;
+
+    table {
+      thead th,
+      tbody td {
+        padding: 0.75rem;
+      }
+    }
+  }
+
+  .action-buttons {
+    flex-direction: column;
+
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-service-hours {
+    padding: 1rem;
+  }
+
+  .admin-service-hours__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .admin-service-hours__header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .admin-service-hours__title {
+    font-size: 1.5rem;
+  }
+
+  .service-section {
+    padding: 1.5rem;
+  }
+
+  .service-toggle__control {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .weekly-hours-table {
+    table {
+      font-size: 0.85rem;
+
+      thead th {
+        padding: 0.75rem 0.5rem;
+
+        &:first-child {
+          position: sticky;
+          left: 0;
+          background: #f9fafb;
+          z-index: 1;
+        }
+      }
+
+      tbody td {
+        padding: 0.75rem 0.5rem;
+
+        &:first-child {
+          position: sticky;
+          left: 0;
+          background: #ffffff;
+          z-index: 1;
+        }
+      }
+    }
+  }
+
+  .closure-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .closure-item__delete {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-field-group {
+    grid-template-columns: 1fr;
+  }
+}
