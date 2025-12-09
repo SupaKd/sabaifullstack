@@ -12,7 +12,7 @@ const defaultStyle = {
 
 // Notifications pour le panier
 export const notifyAddToCart = (productName) =>
-  toast.success(`${productName} ajouté au panier !`, {
+  toast.success(`${productName}`, {
     style: defaultStyle,
     duration: 2000,
   });

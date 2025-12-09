@@ -1,4 +1,4 @@
-// ===== server.js =====
+// ===== server.js ===== (VERSION STRIPE)
 
 // Import des modules principaux
 const express = require('express');
@@ -14,6 +14,7 @@ const productsRoutes = require('./routes/products');
 const ordersRoutes = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
 const serviceHoursRoutes = require('./routes/serviceHours');
+const paymentRoutes = require('./routes/payment'); // ✅ AJOUTÉ
 
 // ⭐ IMPORT CORRIGÉ DU ERROR HANDLER
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -38,6 +39,7 @@ app.use('/api/products', productsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/service-hours', serviceHoursRoutes);
+app.use('/api/payment', paymentRoutes); // ✅ AJOUTÉ
 
 // Route d'accueil
 app.get('/', (req, res) => {
@@ -49,7 +51,8 @@ app.get('/', (req, res) => {
       products: '/api/products',
       orders: '/api/orders',
       admin: '/api/admin',
-      serviceHours: '/api/service-hours'
+      serviceHours: '/api/service-hours',
+      payment: '/api/payment' // ✅ AJOUTÉ
     }
   });
 });
@@ -87,6 +90,7 @@ initDB()
       console.log(`✓ WebSocket sur ws://localhost:${PORT}`);
       console.log(`✓ Health check: http://localhost:${PORT}/health`);
       console.log(`✓ Gestion des heures: http://localhost:${PORT}/api/service-hours`);
+      console.log(`✓ Paiement Stripe: http://localhost:${PORT}/api/payment`); // ✅ AJOUTÉ
       console.log('================================');
     });
   })

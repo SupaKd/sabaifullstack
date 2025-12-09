@@ -74,10 +74,8 @@ const Cart = () => {
   }, []);
 
   const handleClearCart = () => {
-    if (window.confirm("Vider tout le panier ?")) {
-      clearCart();
-      notifyCartCleared();
-    }
+    clearCart();
+    notifyCartCleared();
   };
 
   const handleCheckout = () => {
@@ -249,7 +247,7 @@ const Cart = () => {
 
               <div className="cart-summary__info">
                 <p>
-                  <FontAwesomeIcon icon={faLock} /> Paiement sécurisé
+                  <FontAwesomeIcon icon={faLock} /> Paiement sécurisé via Stripe
                 </p>
                 
               </div>

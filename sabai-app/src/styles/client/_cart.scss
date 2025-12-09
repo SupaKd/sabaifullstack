@@ -6,7 +6,7 @@
   padding: 1rem;
   margin-top: 4rem;
   min-height: calc(100vh - 4rem);
-  background: #f8f9fa;
+  background: linear-gradient(160deg, $primary-light, lighten($success, 45%));
 }
 
 // ===== PANIER VIDE =====
@@ -17,9 +17,10 @@
   justify-content: center;
   text-align: center;
   padding: 3rem 1.5rem;
-  background: white;
+  background: $primary-light;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-top: 3rem;
 
   &__icon {
     font-size: 4rem;
@@ -190,15 +191,12 @@
 }
 
 // ===== RÉSUMÉ DE LA COMMANDE =====
-.cart__summary {
-  width: 100%;
-}
-
 .cart-summary {
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: #FAF9F5;
 
   &__title {
     font-size: 1.25rem;
@@ -561,4 +559,3 @@
     }
   }
 }
-

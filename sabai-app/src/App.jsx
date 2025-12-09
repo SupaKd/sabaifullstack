@@ -1,4 +1,4 @@
-// ===== src/App.jsx =====
+// ===== src/App.jsx ===== (VERSION STRIPE)
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -9,6 +9,7 @@ import { Toaster } from "react-hot-toast";
 import Home from './pages/client/Home';
 import Cart from './pages/client/Cart';
 import Checkout from './pages/client/Checkout';
+import CheckoutSuccess from './pages/client/CheckoutSuccess'; // ✅ AJOUTÉ
 import OrderTracking from './pages/client/OrderTracking';
 
 // Admin pages
@@ -39,6 +40,7 @@ function App() {
                 <Route path="/" element={<><Navbar /><Home /><Footer /></>} />
                 <Route path="/cart" element={<><Navbar /><Cart /><Footer /></>} />
                 <Route path="/checkout" element={<><Navbar /><Checkout /><Footer /></>} />
+                <Route path="/checkout/success" element={<><Navbar /><CheckoutSuccess /><Footer /></>} /> {/* ✅ AJOUTÉ */}
                 <Route path="/order/:orderId" element={<><Navbar /><OrderTracking /><Footer /></>} />
 
                 {/* Routes Admin (pas de footer ici) */}

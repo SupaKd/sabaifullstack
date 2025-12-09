@@ -1,4 +1,4 @@
-// ===== src/pages/client/Home.jsx ===== (VERSION CORRIGÉE)
+// ===== src/pages/client/Home.jsx ===== (VERSION FINALE COMPLÈTE)
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import ProductCard from "../../components/ProductCard";
@@ -16,7 +16,6 @@ const Home = () => {
     loadData();
   }, [selectedCategory]);
 
-  // ✅ FONCTION CORRIGÉE
   const loadData = async () => {
     try {
       setLoading(true);
@@ -28,7 +27,7 @@ const Home = () => {
           : Promise.resolve(categories),
       ]);
 
-      // ✅ Gérer le format { success: true, data: [...] } ou [...]
+      // Gérer le format de réponse API
       const productsData = productsResponse.success 
         ? (productsResponse.data || [])
         : (Array.isArray(productsResponse) ? productsResponse : []);
@@ -64,6 +63,24 @@ const Home = () => {
     });
 
     return grouped;
+  };
+
+  // ✅ Ordre des catégories
+  const getCategoryOrder = () => {
+    return ['Entrées', 'Sushi', 'Bowl', 'Sandwich'];
+  };
+
+  // ✅ Trier les catégories selon l'ordre défini
+  const getSortedCategories = () => {
+    const order = getCategoryOrder();
+    return categories.sort((a, b) => {
+      const indexA = order.indexOf(a);
+      const indexB = order.indexOf(b);
+      // Si la catégorie n'est pas dans l'ordre défini, la mettre à la fin
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
   };
 
   if (loading) {
@@ -104,7 +121,7 @@ const Home = () => {
           <h1>Notre carte</h1>
         </div>
 
-        {/* Filtres de catégories */}
+        {/* ✅ Filtres de catégories dans l'ordre */}
         <div className="home__filters">
           <button
             onClick={() => setSelectedCategory(null)}
@@ -114,7 +131,7 @@ const Home = () => {
           >
             Tous
           </button>
-          {categories.map((cat) => (
+          {getSortedCategories().map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -129,18 +146,20 @@ const Home = () => {
 
         {/* Liste des produits */}
         {showByCategory ? (
-          // Afficher par catégories quand "Tous" est sélectionné
+          // ✅ Afficher par catégories dans l'ordre : Entrées → Sushi → Bowl → Sandwich
           Object.keys(groupedProducts).length > 0 ? (
-            Object.keys(groupedProducts).map((category) => (
-              <div key={category} className="home__category-section">
-                <h2 className="home__category-title">{category}</h2>
-                <div className="home__products">
-                  {groupedProducts[category].map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
+            getCategoryOrder()
+              .filter(cat => groupedProducts[cat])
+              .map((category) => (
+                <div key={category} className="home__category-section">
+                  <h2 className="home__category-title">{category}</h2>
+                  <div className="home__products">
+                    {groupedProducts[category].map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))
+              ))
           ) : (
             <p className="home__empty">Aucun produit disponible</p>
           )

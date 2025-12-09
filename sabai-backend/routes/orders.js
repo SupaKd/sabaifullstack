@@ -382,4 +382,117 @@ router.get('/stats/by-timeslot', async (req, res, next) => {
   }
 });
 
+// ===== À AJOUTER À LA FIN de routes/orders.js =====
+
+// Fonction réutilisable pour créer une commande (appelée par Stripe)
+async function createOrderFromStripe(orderData) {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+    
+    // (Même logique que dans POST / mais sans les validations de service)
+    
+    let total = 0;
+    const orderDetails = [];
+
+    for (const item of orderData.items) {
+      const [products] = await connection.query(
+        'SELECT id, name, price, stock FROM products WHERE id = ? AND available = true',
+        [item.product_id]
+      );
+
+      if (products.length === 0) {
+        throw new Error(`Produit ${item.product_id} non disponible`);
+      }
+
+      if (products[0].stock < item.quantity) {
+        throw new Error(`Stock insuffisant pour ${products[0].name}`);
+      }
+
+      const itemTotal = products[0].price * item.quantity;
+      total += itemTotal;
+
+      orderDetails.push({
+        product_id: products[0].id,
+        name: products[0].name,
+        quantity: item.quantity,
+        price: products[0].price
+      });
+    }
+
+    let deliveryFee = 0;
+    if (orderData.order_type === 'delivery') {
+      const [deliverySettings] = await connection.query(
+        "SELECT setting_value FROM service_settings WHERE setting_key = 'delivery_fee'"
+      );
+      deliveryFee = deliverySettings[0] ? parseFloat(deliverySettings[0].setting_value) : 5;
+      total += deliveryFee;
+    }
+
+    const [orderResult] = await connection.query(
+      'INSERT INTO orders (order_type, customer_name, customer_email, customer_phone, delivery_address, delivery_date, delivery_time, total_amount, delivery_fee, notes, payment_status, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        orderData.order_type,
+        orderData.customer_name, 
+        orderData.customer_email, 
+        orderData.customer_phone, 
+        orderData.delivery_address || null,
+        orderData.delivery_date, 
+        orderData.delivery_time, 
+        total,
+        deliveryFee,
+        orderData.notes || null, 
+        orderData.payment_status || 'paid',
+        orderData.payment_method || 'card'
+      ]
+    );
+
+    const orderId = orderResult.insertId;
+
+    for (const item of orderDetails) {
+      await connection.query(
+        'INSERT INTO order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)',
+        [orderId, item.product_id, item.name, item.quantity, item.price]
+      );
+
+      await connection.query(
+        'UPDATE products SET stock = stock - ? WHERE id = ?',
+        [item.quantity, item.product_id]
+      );
+    }
+
+    await connection.commit();
+
+    console.log(`✓ Commande #${orderId} créée via Stripe`);
+
+    // Envoyer email
+    sendConfirmationEmail(orderData.customer_email, orderData.customer_name, orderId, total, orderDetails, orderData.delivery_date, orderData.delivery_time, orderData.order_type);
+
+    // Notifier WebSocket
+    const { notifyAdmins } = require('../config/websocket');
+    notifyAdmins('new_order', {
+      order_id: orderId,
+      order_type: orderData.order_type,
+      customer_name: orderData.customer_name,
+      total,
+      items_count: orderDetails.length,
+      delivery_date: orderData.delivery_date,
+      delivery_time: orderData.delivery_time
+    });
+
+    return { orderId, total };
+
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+// Exporter la fonction
+module.exports.createOrderFromStripe = createOrderFromStripe;
+
 module.exports = router;
