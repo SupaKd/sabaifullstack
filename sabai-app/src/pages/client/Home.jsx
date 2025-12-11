@@ -1,4 +1,3 @@
-// ===== src/pages/client/Home.jsx ===== (VERSION FINALE COMPLÈTE)
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import ProductCard from "../../components/ProductCard";
@@ -12,9 +11,19 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Animation lors de changement de catégorie
+  const [animate, setAnimate] = useState(false);
+
   useEffect(() => {
     loadData();
   }, [selectedCategory]);
+
+  // Déclenchement animation
+  useEffect(() => {
+    setAnimate(true);
+    const timer = setTimeout(() => setAnimate(false), 300);
+    return () => clearTimeout(timer);
+  }, [selectedCategory, products.length]);
 
   const loadData = async () => {
     try {
@@ -27,7 +36,6 @@ const Home = () => {
           : Promise.resolve(categories),
       ]);
 
-      // Gérer le format de réponse API
       const productsData = productsResponse.success
         ? productsResponse.data || []
         : Array.isArray(productsResponse)
@@ -54,7 +62,6 @@ const Home = () => {
     }
   };
 
-  // Grouper les produits par catégorie
   const getGroupedProducts = () => {
     const grouped = {};
 
@@ -69,18 +76,16 @@ const Home = () => {
     return grouped;
   };
 
-  // ✅ Ordre des catégories
   const getCategoryOrder = () => {
-    return ["Entrées", "Sushi", "Bowl", "Sandwich"];
+    return ["Entrées", "Sushi", "Bowl", "Banh Mi","Boissons"];
   };
 
-  // ✅ Trier les catégories selon l'ordre défini
   const getSortedCategories = () => {
     const order = getCategoryOrder();
     return categories.sort((a, b) => {
       const indexA = order.indexOf(a);
       const indexB = order.indexOf(b);
-      // Si la catégorie n'est pas dans l'ordre défini, la mettre à la fin
+
       if (indexA === -1) return 1;
       if (indexB === -1) return -1;
       return indexA - indexB;
@@ -109,21 +114,17 @@ const Home = () => {
   return (
     <main className="home">
       <Hero />
-
-      {/* Service Status */}
       <ServiceStatus showHoursButton={true} />
 
       <div className="container__home" id="menu">
-        {/* Image décorative */}
         <img
           src="/images/coriande.png"
           alt="Décoration"
           className="menu__overlay-image"
         />
 
-       
+        <h1>La carte</h1>
 
-        {/* ✅ Filtres de catégories dans l'ordre */}
         <div className="home__filters">
           <button
             onClick={() => setSelectedCategory(null)}
@@ -133,6 +134,7 @@ const Home = () => {
           >
             Tous
           </button>
+
           {getSortedCategories().map((cat) => (
             <button
               key={cat}
@@ -146,16 +148,20 @@ const Home = () => {
           ))}
         </div>
 
-        {/* Liste des produits */}
+        {/* Liste des produits avec FADE automatique */}
         {showByCategory ? (
-          // ✅ Afficher par catégories dans l'ordre : Entrées → Sushi → Bowl → Sandwich
           Object.keys(groupedProducts).length > 0 ? (
             getCategoryOrder()
               .filter((cat) => groupedProducts[cat])
               .map((category) => (
                 <div key={category} className="home__category-section">
                   <h2 className="home__category-title">{category}</h2>
-                  <div className="home__products">
+
+                  <div
+                    className={`home__products ${
+                      animate ? "fade" : ""
+                    }`}
+                  >
                     {groupedProducts[category].map((product) => (
                       <ProductCard key={product.id} product={product} />
                     ))}
@@ -165,9 +171,8 @@ const Home = () => {
           ) : (
             <p className="home__empty">Aucun produit disponible</p>
           )
-        ) : // Afficher sans titre de catégorie quand une catégorie spécifique est sélectionnée
-        products.length > 0 ? (
-          <div className="home__products">
+        ) : products.length > 0 ? (
+          <div className={`home__products ${animate ? "fade" : ""}`}>
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

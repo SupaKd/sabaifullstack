@@ -16,7 +16,7 @@ function Hero() {
             />
           </div>
           <p className="home__hero-subtitle">
-            Bienvenue chez Sabai, votre restaurant asiatique à Thoiry.
+          Des plats authentiques préparés avec passion, pour un voyage culinaire unique.
           </p>
           <a href="#menu" className="hero__cta" aria-label="Accéder au menu">
           COMMANDER

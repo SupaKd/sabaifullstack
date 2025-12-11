@@ -55,7 +55,7 @@ const AdminDashboard = () => {
       // ✅ Utiliser api.js au lieu de fetch direct
       const [ordersData, settingsData] = await Promise.all([
         api.getAdminOrders(null),
-        api.getServiceHours(), // ← Utiliser l'API
+        api.getServiceHours(), 
       ]);
 
       // ✅ Gérer la réponse correctement
@@ -141,9 +141,7 @@ const AdminDashboard = () => {
     <div className="dashboard">
       {/* HEADER */}
       <div className="header">
-        <h1>
-          <FontAwesomeIcon icon={faBowlFood} /> Dashboard Sabai
-        </h1>
+        <img src="/images/logosabai.png" alt="logo" className="logodash"/>
 
         <div className="header-nav">
           <a href="/admin/products">

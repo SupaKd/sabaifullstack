@@ -1,4 +1,4 @@
-// ===== src/App.jsx ===== (VERSION STRIPE)
+// ===== src/App.jsx ===== (MISE À JOUR)
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -9,10 +9,11 @@ import { Toaster } from "react-hot-toast";
 import Home from './pages/client/Home';
 import Cart from './pages/client/Cart';
 import Checkout from './pages/client/Checkout';
-import CheckoutSuccess from './pages/client/CheckoutSuccess'; // ✅ AJOUTÉ
+import CheckoutSuccess from './pages/client/CheckoutSuccess';
 import Cgv from './pages/client/Cgv';
 import Politique from './pages/client/Politique';
 import Mention from './pages/client/Mention';
+import NotFound from './pages/NotFound'; // ✅ AJOUTÉ
 
 // Admin pages
 import AdminLogin from './pages/admin/Login';
@@ -48,11 +49,14 @@ function App() {
                 <Route path="/mention" element={<><Navbar /><Mention /><Footer /></>} />
 
                 {/* Routes Admin (pas de footer ici) */}
-                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/login" element={<AdminLogin />} />
                 <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 <Route path="/admin/orders" element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
                 <Route path="/admin/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
                 <Route path="/admin/horaires" element={<ProtectedRoute><AdminServiceHours /></ProtectedRoute>} />
+
+                {/* 404 - Doit être en dernier */}
+                <Route path="*" element={<><Navbar /><NotFound /><Footer /></>} />
               </Routes>
 
             </div>

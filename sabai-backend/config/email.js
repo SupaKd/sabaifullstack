@@ -201,7 +201,7 @@ async function sendOrderStatusEmail(email, name, orderId, status) {
         </div>
         
         <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666;">
-          <p style="margin: 0;">Restaurant Sabai - Cuisine thaïlandaise</p>
+          <p style="margin: 0;">Restaurant Sabai - Cuisine asiatique</p>
         </div>
       </div>
     `
