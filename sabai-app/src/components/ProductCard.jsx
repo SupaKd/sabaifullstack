@@ -1,4 +1,4 @@
-// ===== src/components/ProductCard.jsx (FINAL DEBUG) =====
+// ===== src/components/ProductCard.jsx =====
 import { useCart } from "../context/CartContext";
 import { useServiceStatus } from "../context/ServiceStatusContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -16,15 +16,9 @@ const ProductCard = ({ product }) => {
   const { addItem, items } = useCart();
   const { serviceStatus, isOpen } = useServiceStatus();
 
-  // 🔍 DEBUG
-  console.log('🟣 ProductCard - serviceStatus:', serviceStatus);
-  console.log('🟣 ProductCard - isOpen:', isOpen);
-
   const price = parseFloat(product.price);
   const stock = parseInt(product.stock_quantity || product.stock || 0);
   const isServiceOpen = serviceStatus?.open ?? true; // Par défaut ouvert si pas de statut
-
-  console.log('🟣 ProductCard - isServiceOpen:', isServiceOpen);
 
   // Calculer la quantité déjà dans le panier pour ce produit
   const getQuantityInCart = () => {
@@ -37,9 +31,6 @@ const ProductCard = ({ product }) => {
   const isFullyInCart = availableStock <= 0;
 
   const handleAddToCart = () => {
-    console.log('🔴 CLICK - Service Status:', serviceStatus);
-    console.log('🔴 CLICK - isServiceOpen:', isServiceOpen);
-
     // Vérifier si le service est ouvert
     if (!isServiceOpen) {
       toast.error("Nous sommes actuellement fermés", {
@@ -134,8 +125,6 @@ const ProductCard = ({ product }) => {
 
   return (
     <div className={`product-card ${!isServiceOpen ? 'product-card--closed' : ''}`}>
-    
-
       <div className="product-card__content">
         <h3 className="product-card__title">{product.name}</h3>
         <p className="product-card__description">{product.description}</p>
@@ -152,8 +141,6 @@ const ProductCard = ({ product }) => {
             {getButtonContent()}
           </button>
         </div>
-
-        
 
         {/* Affichage du stock (uniquement si service ouvert) */}
         {isServiceOpen && stock > 0 && (

@@ -1,4 +1,4 @@
-// src/context/ServiceStatusContext.jsx (version enrichie avec DEBUG)
+// src/context/ServiceStatusContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const ServiceStatusContext = createContext();
@@ -11,12 +11,6 @@ export const ServiceStatusProvider = ({ children }) => {
   const isOpen = serviceStatus?.open ?? false;
   const closingTime = serviceStatus?.closing_time;
   const openingTime = serviceStatus?.opening_time;
-
-  // 🔍 DEBUG - Suivre les changements
-  useEffect(() => {
-    console.log('🔵 ServiceStatusContext - Status updated:', serviceStatus);
-    console.log('🔵 ServiceStatusContext - isOpen:', isOpen);
-  }, [serviceStatus, isOpen]);
 
   const value = {
     serviceStatus,

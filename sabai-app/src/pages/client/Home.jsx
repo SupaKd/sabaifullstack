@@ -19,7 +19,7 @@ const Home = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       const [productsResponse, categoriesResponse] = await Promise.all([
         api.getProducts(selectedCategory),
         selectedCategory === null
@@ -28,20 +28,24 @@ const Home = () => {
       ]);
 
       // Gérer le format de réponse API
-      const productsData = productsResponse.success 
-        ? (productsResponse.data || [])
-        : (Array.isArray(productsResponse) ? productsResponse : []);
-      
+      const productsData = productsResponse.success
+        ? productsResponse.data || []
+        : Array.isArray(productsResponse)
+        ? productsResponse
+        : [];
+
       const categoriesData = categoriesResponse.success
-        ? (categoriesResponse.data || [])
-        : (Array.isArray(categoriesResponse) ? categoriesResponse : []);
+        ? categoriesResponse.data || []
+        : Array.isArray(categoriesResponse)
+        ? categoriesResponse
+        : [];
 
       setProducts(productsData);
       if (selectedCategory === null) {
         setCategories(categoriesData);
       }
     } catch (err) {
-      console.error('Erreur chargement:', err);
+      console.error("Erreur chargement:", err);
       setError(err.message);
       setProducts([]);
       setCategories([]);
@@ -67,7 +71,7 @@ const Home = () => {
 
   // ✅ Ordre des catégories
   const getCategoryOrder = () => {
-    return ['Entrées', 'Sushi', 'Bowl', 'Sandwich'];
+    return ["Entrées", "Sushi", "Bowl", "Sandwich"];
   };
 
   // ✅ Trier les catégories selon l'ordre défini
@@ -116,10 +120,8 @@ const Home = () => {
           alt="Décoration"
           className="menu__overlay-image"
         />
-        
-        <div className="title">
-          <h1>Notre carte</h1>
-        </div>
+
+       
 
         {/* ✅ Filtres de catégories dans l'ordre */}
         <div className="home__filters">
@@ -149,7 +151,7 @@ const Home = () => {
           // ✅ Afficher par catégories dans l'ordre : Entrées → Sushi → Bowl → Sandwich
           Object.keys(groupedProducts).length > 0 ? (
             getCategoryOrder()
-              .filter(cat => groupedProducts[cat])
+              .filter((cat) => groupedProducts[cat])
               .map((category) => (
                 <div key={category} className="home__category-section">
                   <h2 className="home__category-title">{category}</h2>
@@ -163,19 +165,17 @@ const Home = () => {
           ) : (
             <p className="home__empty">Aucun produit disponible</p>
           )
+        ) : // Afficher sans titre de catégorie quand une catégorie spécifique est sélectionnée
+        products.length > 0 ? (
+          <div className="home__products">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
         ) : (
-          // Afficher sans titre de catégorie quand une catégorie spécifique est sélectionnée
-          products.length > 0 ? (
-            <div className="home__products">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <p className="home__empty">
-              Aucun produit disponible dans cette catégorie
-            </p>
-          )
+          <p className="home__empty">
+            Aucun produit disponible dans cette catégorie
+          </p>
         )}
       </div>
     </main>

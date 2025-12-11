@@ -51,11 +51,11 @@ const AdminDashboard = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // ✅ Utiliser api.js au lieu de fetch direct
       const [ordersData, settingsData] = await Promise.all([
         api.getAdminOrders(null),
-        api.getServiceHours() // ← Utiliser l'API
+        api.getServiceHours(), // ← Utiliser l'API
       ]);
 
       // ✅ Gérer la réponse correctement
@@ -66,14 +66,14 @@ const AdminDashboard = () => {
       }
 
       // ✅ Charger les settings via API
-      const settings = await api.request('/service-hours/settings');
-      
+      const settings = await api.request("/service-hours/settings");
+
       if (settings.success) {
         setServiceEnabled(settings.data.service_enabled === "true");
         setDeliveryEnabled(settings.data.delivery_enabled === "true");
       }
     } catch (err) {
-      console.error('Erreur chargement données:', err);
+      console.error("Erreur chargement données:", err);
     } finally {
       setLoading(false);
     }
@@ -83,11 +83,11 @@ const AdminDashboard = () => {
   const toggleService = async () => {
     try {
       const newValue = !serviceEnabled;
-      await api.updateSetting('service_enabled', newValue ? 'true' : 'false');
+      await api.updateSetting("service_enabled", newValue ? "true" : "false");
       setServiceEnabled(newValue);
     } catch (err) {
-      console.error('Erreur toggle service:', err);
-      alert('Erreur lors de la mise à jour du service');
+      console.error("Erreur toggle service:", err);
+      alert("Erreur lors de la mise à jour du service");
     }
   };
 
@@ -97,8 +97,8 @@ const AdminDashboard = () => {
       await api.updateDeliveryEnabled(newValue);
       setDeliveryEnabled(newValue);
     } catch (err) {
-      console.error('Erreur toggle delivery:', err);
-      alert('Erreur lors de la mise à jour de la livraison');
+      console.error("Erreur toggle delivery:", err);
+      alert("Erreur lors de la mise à jour de la livraison");
     }
   };
 
@@ -108,8 +108,8 @@ const AdminDashboard = () => {
       playSound();
       loadData();
     } catch (err) {
-      console.error('Erreur mise à jour statut:', err);
-      alert('Erreur lors de la mise à jour du statut');
+      console.error("Erreur mise à jour statut:", err);
+      alert("Erreur lors de la mise à jour du statut");
     }
   };
 
@@ -126,7 +126,7 @@ const AdminDashboard = () => {
       osc.start();
       osc.stop(ctx.currentTime + 0.3);
     } catch (err) {
-      console.log('Audio non disponible');
+      console.log("Audio non disponible");
     }
   };
 
@@ -153,15 +153,10 @@ const AdminDashboard = () => {
           <a href="/admin/horaires">
             <FontAwesomeIcon icon={faClock} /> Horaires
           </a>
-          
-          <a href="/admin/orders">
-            <FontAwesomeIcon icon={faBoxOpen} /> Commandes
-          </a>
         </div>
 
         <div className="header-right">
-          <span className="user-name">👤 {user?.username}</span>
-          
+
           <button
             onClick={() => {
               logout();
@@ -249,7 +244,8 @@ const AdminDashboard = () => {
       <div className="orders-section">
         <div className="orders-header">
           <h2>
-            <FontAwesomeIcon icon={faBoxOpen} /> Commandes récentes ({orders.length})
+            <FontAwesomeIcon icon={faBoxOpen} /> Commandes récentes (
+            {orders.length})
           </h2>
         </div>
 
@@ -262,133 +258,130 @@ const AdminDashboard = () => {
               <p>Aucune commande</p>
             </div>
           ) : (
-            sortedOrders.slice(0, 10).map((order) => ( // ← Limiter à 10 pour dashboard
-              <div key={order.id} className={`order order--${order.status}`}>
-                {/* HEADER commande */}
-                <div className="order-header">
-                  <div className="order-main">
-                    <span className="order-id">
-                      <FontAwesomeIcon icon={faChevronRight} /> #{order.id}
-                    </span>
+            sortedOrders.slice(0, 10).map(
+              (
+                order // ← Limiter à 10 pour dashboard
+              ) => (
+                <div key={order.id} className={`order order--${order.status}`}>
+                  {/* HEADER commande */}
+                  <div className="order-header">
+                    <div className="order-main">
+                      <span className="order-id">
+                        <FontAwesomeIcon icon={faChevronRight} /> #{order.id}
+                      </span>
 
-                    <span
-                      className={`order-type ${
-                        order.order_type === "takeaway"
-                          ? "order-type--takeaway"
-                          : "order-type--delivery"
-                      }`}
-                    >
-                      {order.order_type === "takeaway" ? (
-                        <>
-                          <FontAwesomeIcon icon={faShoppingBag} /> À emporter
-                        </>
-                      ) : (
-                        <>
-                          <FontAwesomeIcon icon={faTruck} /> Livraison
-                        </>
-                      )}
-                    </span>
-                  </div>
-
-                  {order.delivery_time && (
-                    <div className="order-time">
-                      <FontAwesomeIcon icon={faClock} />{" "}
-                      {order.delivery_time.slice(0, 5)}
-                    </div>
-                  )}
-                </div>
-
-                {/* BODY commande */}
-                <div className="order-body">
-                  <div className="order-client">
-                    <div className="client-name">
-                      <FontAwesomeIcon icon={faUser} /> {order.customer_name}
-                    </div>
-
-                    <div className="client-phone">
-                      <FontAwesomeIcon icon={faPhone} /> {order.customer_phone}
-                    </div>
-
-                    {order.order_type === "delivery" &&
-                      order.delivery_address && (
-                        <div className="client-address">
-                          <FontAwesomeIcon icon={faMapMarkerAlt} />{" "}
-                          {order.delivery_address}
-                        </div>
-                      )}
-                  </div>
-
-                  {order.notes && (
-                    <div className="order-notes">
-                      <strong>
-                        <FontAwesomeIcon icon={faCommentDots} /> Note :
-                      </strong>{" "}
-                      {order.notes}
-                    </div>
-                  )}
-
-                  <div className="order-items">{order.items}</div>
-                </div>
-
-                {/* FOOTER commande */}
-                <div className="order-footer">
-                  <div className="order-total">
-                    {parseFloat(order.total_amount).toFixed(2)} €
-                  </div>
-
-                  <div className="order-actions">
-                    {order.status === "pending" && (
-                      <button
-                        onClick={() => updateStatus(order.id, "confirmed")}
-                        className="order-btn"
+                      <span
+                        className={`order-type ${
+                          order.order_type === "takeaway"
+                            ? "order-type--takeaway"
+                            : "order-type--delivery"
+                        }`}
                       >
-                        <FontAwesomeIcon icon={faCheck} /> Accepter
-                      </button>
+                        {order.order_type === "takeaway" ? (
+                          <>
+                            <FontAwesomeIcon icon={faShoppingBag} /> À emporter
+                          </>
+                        ) : (
+                          <>
+                            <FontAwesomeIcon icon={faTruck} /> Livraison
+                          </>
+                        )}
+                      </span>
+                    </div>
+
+                    {order.delivery_time && (
+                      <div className="order-time">
+                        <FontAwesomeIcon icon={faClock} />{" "}
+                        {order.delivery_time.slice(0, 5)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* BODY commande */}
+                  <div className="order-body">
+                    <div className="order-client">
+                      <div className="client-name">
+                        <FontAwesomeIcon icon={faUser} /> {order.customer_name}
+                      </div>
+
+                      <div className="client-phone">
+                        <FontAwesomeIcon icon={faPhone} />{" "}
+                        {order.customer_phone}
+                      </div>
+
+                      {order.order_type === "delivery" &&
+                        order.delivery_address && (
+                          <div className="client-address">
+                            <FontAwesomeIcon icon={faMapMarkerAlt} />{" "}
+                            {order.delivery_address}
+                          </div>
+                        )}
+                    </div>
+
+                    {order.notes && (
+                      <div className="order-notes">
+                        <strong>
+                          <FontAwesomeIcon icon={faCommentDots} /> Note :
+                        </strong>{" "}
+                        {order.notes}
+                      </div>
                     )}
 
-                    {order.status === "confirmed" && (
-                      <button
-                        onClick={() => updateStatus(order.id, "preparing")}
-                        className="order-btn"
-                      >
-                        <FontAwesomeIcon icon={faUtensils} /> Préparer
-                      </button>
-                    )}
+                    <div className="order-items">{order.items}</div>
+                  </div>
 
-                    {order.status === "preparing" &&
-                      order.order_type === "delivery" && (
+                  {/* FOOTER commande */}
+                  <div className="order-footer">
+                    <div className="order-total">
+                      {parseFloat(order.total_amount).toFixed(2)} €
+                    </div>
+
+                    <div className="order-actions">
+                      {order.status === "pending" && (
                         <button
-                          onClick={() => updateStatus(order.id, "delivering")}
+                          onClick={() => updateStatus(order.id, "confirmed")}
                           className="order-btn"
                         >
-                          <FontAwesomeIcon icon={faMotorcycle} /> Livrer
+                          <FontAwesomeIcon icon={faCheck} /> Accepter
                         </button>
                       )}
 
-                    {(order.status === "delivering" ||
-                      (order.status === "preparing" &&
-                        order.order_type === "takeaway")) && (
-                      <button
-                        onClick={() => updateStatus(order.id, "completed")}
-                        className="order-btn"
-                      >
-                        <FontAwesomeIcon icon={faCheck} /> Terminée
-                      </button>
-                    )}
+                      {order.status === "confirmed" && (
+                        <button
+                          onClick={() => updateStatus(order.id, "preparing")}
+                          className="order-btn"
+                        >
+                          <FontAwesomeIcon icon={faUtensils} /> Préparer
+                        </button>
+                      )}
+
+                      {order.status === "preparing" &&
+                        order.order_type === "delivery" && (
+                          <button
+                            onClick={() => updateStatus(order.id, "delivering")}
+                            className="order-btn"
+                          >
+                            <FontAwesomeIcon icon={faMotorcycle} /> Livrer
+                          </button>
+                        )}
+
+                      {(order.status === "delivering" ||
+                        (order.status === "preparing" &&
+                          order.order_type === "takeaway")) && (
+                        <button
+                          onClick={() => updateStatus(order.id, "completed")}
+                          className="order-btn"
+                        >
+                          <FontAwesomeIcon icon={faCheck} /> Terminée
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              )
+            )
           )}
         </div>
-        
-        {sortedOrders.length > 10 && (
-          <div className="orders-footer">
-            <a href="/admin/orders" className="btn btn--secondary">
-              Voir toutes les commandes ({sortedOrders.length})
-            </a>
-          </div>
-        )}
       </div>
     </div>
   );

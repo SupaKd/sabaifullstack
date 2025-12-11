@@ -90,7 +90,7 @@ async function sendConfirmationEmail(
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
         <div style="background-color: #2c5530; color: white; padding: 20px; text-align: center;">
           <h1 style="margin: 0;">Restaurant Sabai</h1>
-          <p style="margin: 5px 0 0 0;">Cuisine thaïlandaise authentique</p>
+          <p style="margin: 5px 0 0 0;">Cuisine asiatique authentique</p>
         </div>
         
         <div style="padding: 30px;">
@@ -119,7 +119,7 @@ async function sendConfirmationEmail(
         </div>
         
         <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666;">
-          <p style="margin: 0;">Restaurant Sabai - Cuisine thaïlandaise</p>
+          <p style="margin: 0;">Restaurant Sabai - Cuisine asiatique</p>
           <p style="margin: 5px 0 0 0;">Cet email est envoyé automatiquement, merci de ne pas y répondre.</p>
         </div>
       </div>

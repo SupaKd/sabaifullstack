@@ -117,9 +117,9 @@
 }
 
 .checkout-success__confirmation {
-  font-size: $font-size-sm;
+  font-size: 1.3rem;
   margin-bottom: $spacing-md;
-  color: #555;
+  color: $success;
 }
 
 /* Buttons */
@@ -139,20 +139,11 @@
   }
 }
 
-.checkout-success__button--return {
-  background: #222;
-  color: #fff;
-
-  &:hover {
-    background: darken($primary-color, 8%);
-  }
-}
-
 .checkout-success__button--home {
   background: #222;
   color: #fff;
 
   &:hover {
-    background: darken($primary-color, 10%);
+    background: darken($success, 10%);
   }
 }

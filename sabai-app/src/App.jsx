@@ -10,7 +10,9 @@ import Home from './pages/client/Home';
 import Cart from './pages/client/Cart';
 import Checkout from './pages/client/Checkout';
 import CheckoutSuccess from './pages/client/CheckoutSuccess'; // ✅ AJOUTÉ
-import OrderTracking from './pages/client/OrderTracking';
+import Cgv from './pages/client/Cgv';
+import Politique from './pages/client/Politique';
+import Mention from './pages/client/Mention';
 
 // Admin pages
 import AdminLogin from './pages/admin/Login';
@@ -40,8 +42,10 @@ function App() {
                 <Route path="/" element={<><Navbar /><Home /><Footer /></>} />
                 <Route path="/cart" element={<><Navbar /><Cart /><Footer /></>} />
                 <Route path="/checkout" element={<><Navbar /><Checkout /><Footer /></>} />
-                <Route path="/checkout/success" element={<><Navbar /><CheckoutSuccess /><Footer /></>} /> {/* ✅ AJOUTÉ */}
-                <Route path="/order/:orderId" element={<><Navbar /><OrderTracking /><Footer /></>} />
+                <Route path="/checkout/success" element={<><Navbar /><CheckoutSuccess /><Footer /></>} /> 
+                <Route path="/cgv" element={<><Navbar /><Cgv /><Footer /></>}/>
+                <Route path="/politique" element={<><Navbar /><Politique /><Footer /></>} />
+                <Route path="/mention" element={<><Navbar /><Mention /><Footer /></>} />
 
                 {/* Routes Admin (pas de footer ici) */}
                 <Route path="/admin/login" element={<AdminLogin />} />

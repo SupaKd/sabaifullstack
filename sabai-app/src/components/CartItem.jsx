@@ -166,7 +166,6 @@ const CartItem = ({ item }) => {
       <div className="cart-item__actions">
         {/* Contrôles de quantité */}
         <div className="cart-item__quantity">
-          <label className="cart-item__quantity-label">Quantité</label>
           <div className="quantity-controls">
             <button
               className="quantity-btn quantity-btn--minus"

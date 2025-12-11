@@ -1,4 +1,4 @@
-// ===== src/pages/client/CheckoutSuccess.jsx =====
+// ===== src/pages/client/CheckoutSuccess.jsx ===== (VERSION CORRIGÉE)
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
@@ -15,12 +15,16 @@ const CheckoutSuccess = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let isMounted = true; // ✅ Empêche les updates après unmount
+
     const verifyPayment = async () => {
       const sessionId = searchParams.get('session_id');
 
       if (!sessionId) {
-        setError('Session invalide');
-        setLoading(false);
+        if (isMounted) {
+          setError('Session invalide');
+          setLoading(false);
+        }
         return;
       }
 
@@ -33,22 +37,31 @@ const CheckoutSuccess = () => {
 
         const data = await response.json();
 
+        if (!isMounted) return; // ✅ Arrêter si le composant est démonté
+
         if (data.success) {
           setOrderId(data.order_id);
-          clearCart();
+          clearCart(); // ✅ Appeler clearCart seulement en cas de succès
           setLoading(false);
         } else {
           throw new Error(data.error || 'Erreur lors de la vérification du paiement');
         }
       } catch (err) {
-        console.error('Erreur:', err);
-        setError(err.message);
-        setLoading(false);
+        if (isMounted) {
+          console.error('Erreur:', err);
+          setError(err.message);
+          setLoading(false);
+        }
       }
     };
 
     verifyPayment();
-  }, [searchParams, clearCart]);
+
+    return () => {
+      isMounted = false; // ✅ Cleanup pour éviter les memory leaks
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // ✅ SEULEMENT searchParams - PAS clearCart !
 
   if (loading) {
     return (
@@ -101,7 +114,7 @@ const CheckoutSuccess = () => {
 
         <div className="checkout-success__actions">
           <p className="checkout-success__confirmation">
-            Un email de confirmation vous a été envoyé
+            Un email de confirmation vous a été envoyé.
           </p>
         
           <button 

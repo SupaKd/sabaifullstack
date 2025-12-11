@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { getPool } = require('../config/database');
-const { sendConfirmationEmail } = require('../config/email');
+const { sendConfirmationEmail, sendOrderStatusEmail } = require('../config/email');
 const { validateOrder } = require('../middleware/validation');
 const rateLimiter = require('../middleware/rateLimiter');
 const { checkServiceAvailability } = require('../middleware/checkServiceAvailability');
@@ -198,34 +198,70 @@ router.post('/', checkServiceAvailability, rateLimiter(5, 60000), validateOrder,
 });
 
 // --- GET /api/orders/:id ---
-router.get('/:id', async (req, res, next) => {
+// --- PUT /api/orders/:id/status ---
+router.put('/:id/status', async (req, res, next) => {
   try {
     const pool = getPool();
+    const { status } = req.body;
 
+    const validStatuses = ['pending', 'confirmed', 'preparing', 'delivering', 'ready', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Statut invalide' 
+      });
+    }
+
+    // 🆕 Récupérer les infos de la commande AVANT la mise à jour
     const [orders] = await pool.query(
-      `SELECT 
-        o.*,
-        DATE_FORMAT(o.delivery_date, '%Y-%m-%d') as delivery_date_formatted,
-        TIME_FORMAT(o.delivery_time, '%H:%i') as delivery_time_formatted
-      FROM orders o
-      WHERE o.id = ?`,
+      'SELECT customer_email, customer_name FROM orders WHERE id = ?',
       [req.params.id]
     );
 
     if (orders.length === 0) {
-      return res.status(404).json({ error: 'Commande non trouvée' });
+      return res.status(404).json({ 
+        success: false,
+        error: 'Commande non trouvée' 
+      });
     }
 
-    const [items] = await pool.query(`
-      SELECT oi.*, p.name, p.description
-      FROM order_items oi
-      JOIN products p ON oi.product_id = p.id
-      WHERE oi.order_id = ?
-    `, [req.params.id]);
+    const { customer_email, customer_name } = orders[0];
+
+    // Mise à jour du statut
+    const [result] = await pool.query(
+      'UPDATE orders SET status = ? WHERE id = ?',
+      [status, req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Commande non trouvée' 
+      });
+    }
+
+    // 🆕 Envoyer l'email de notification de statut
+    const emailResult = await sendOrderStatusEmail(
+      customer_email,
+      customer_name,
+      req.params.id,
+      status
+    );
+
+    if (!emailResult.success) {
+      console.warn(`⚠️  Email de statut non envoyé pour commande #${req.params.id}:`, emailResult.error);
+    }
+
+    // Notifier via WebSocket
+    const { notifyAdmins } = require('../config/websocket');
+    notifyAdmins('order_status_updated', {
+      order_id: parseInt(req.params.id),
+      new_status: status
+    });
 
     res.json({
-      order: orders[0],
-      items: items
+      success: true,
+      message: 'Statut mis à jour avec succès'
     });
 
   } catch (error) {

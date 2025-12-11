@@ -5,11 +5,9 @@ import { useCart } from "../context/CartContext";
 // FontAwesome
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBarsStaggered,
-  faXmark,
   faBasketShopping,
+  faPhoneFlip,
 } from "@fortawesome/free-solid-svg-icons";
-import { faFacebook, faInstagram } from "@fortawesome/free-brands-svg-icons";
 
 function Navbar() {
   const { getItemCount } = useCart();
@@ -29,6 +27,9 @@ function Navbar() {
         {/* Actions : Panier + Burger */}
         <div className="navbar__actions">
           <div className="navbar__right">
+          <a href="tel:+33678357198" className="navbar__cart-link">
+          <FontAwesomeIcon icon={faPhoneFlip} />
+        </a>
             <Link to="/cart" className="navbar__cart-link">
               <FontAwesomeIcon
                 icon={faBasketShopping}
@@ -38,46 +39,6 @@ function Navbar() {
                 <span className="navbar__cart-badge">{getItemCount()}</span>
               )}
             </Link>
-
-            <button
-              className={`navbar__burger ${
-                isMenuOpen ? "navbar__burger--open" : ""
-              }`}
-              onClick={toggleMenu}
-              aria-label="Menu"
-            >
-              <FontAwesomeIcon icon={isMenuOpen ? faXmark : faBarsStaggered} />
-            </button>
-          </div>
-
-          {/* Menu */}
-          <div
-            className={`navbar__menu ${isMenuOpen ? "navbar__menu--open" : ""}`}
-          >
-            
-            <div className="navbar__social">
-              <a
-                href="https://www.instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="navbar__link"
-                onClick={closeMenu}
-              >
-                <FontAwesomeIcon icon={faInstagram} className="navbar__icon" />
-              </a>
-
-              <a
-                href="https://www.instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="navbar__link"
-                onClick={closeMenu}
-              >
-                <FontAwesomeIcon icon={faFacebook} className="navbar__icon" />
-              </a>
-            </div>
-
-            
           </div>
         </div>
 

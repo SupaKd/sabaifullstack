@@ -1,4 +1,4 @@
-// ===== routes/payment.js ===== (VERSION CORRIGÉE)
+// ===== routes/payment.js ===== (VERSION CORRIGÉE - ANTI-DOUBLON)
 const express = require('express');
 const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -73,6 +73,15 @@ router.post('/create-checkout-session', async (req, res) => {
 // ✅ Vérifier le paiement et créer la commande
 router.post('/verify-payment', async (req, res) => {
   const { session_id } = req.body;
+
+  // ✅ Validation
+  if (!session_id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Session ID manquant'
+    });
+  }
+
   const pool = getPool();
   const connection = await pool.getConnection();
 
@@ -87,16 +96,18 @@ router.post('/verify-payment', async (req, res) => {
       });
     }
 
-    // Vérifier si la commande n'existe pas déjà (éviter les doublons)
+    // ✅ VÉRIFICATION ANTI-DOUBLON via payment_session_id
     const [existing] = await connection.query(
-      'SELECT id FROM orders WHERE customer_email = ? AND delivery_date = ? AND delivery_time = ? AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)',
-      [session.customer_email, session.metadata.delivery_date, session.metadata.delivery_time]
+      'SELECT id, total_amount FROM orders WHERE payment_session_id = ?',
+      [session_id]
     );
 
     if (existing.length > 0) {
+      console.log(`⚠️ Commande #${existing[0].id} déjà créée pour session ${session_id}`);
       return res.json({
         success: true,
         order_id: existing[0].id,
+        total: parseFloat(existing[0].total_amount).toFixed(2),
         message: 'Commande déjà créée'
       });
     }
@@ -139,7 +150,7 @@ router.post('/verify-payment', async (req, res) => {
     const deliveryFee = parseFloat(metadata.delivery_fee);
     total += deliveryFee;
 
-    // ✅ CRÉER LA COMMANDE
+    // ✅ CRÉER LA COMMANDE avec payment_session_id
     const [orderResult] = await connection.query(
       `INSERT INTO orders (
         order_type, 
@@ -153,8 +164,9 @@ router.post('/verify-payment', async (req, res) => {
         delivery_fee, 
         notes, 
         payment_status, 
-        payment_method
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        payment_method,
+        payment_session_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         metadata.order_type,
         metadata.customer_name,
@@ -167,7 +179,8 @@ router.post('/verify-payment', async (req, res) => {
         deliveryFee,
         metadata.notes || null,
         'paid',
-        'card'
+        'card',
+        session_id // ✅ IMPORTANT - Empêche les doublons
       ]
     );
 

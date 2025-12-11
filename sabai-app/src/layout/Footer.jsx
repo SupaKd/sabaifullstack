@@ -1,3 +1,5 @@
+import React from "react";
+import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faLocationDot,
@@ -6,10 +8,7 @@ import {
   faClock,
   faHeart,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  faFacebookF,
-  faInstagram,
-} from "@fortawesome/free-brands-svg-icons";
+import { faFacebookF, faInstagram } from "@fortawesome/free-brands-svg-icons";
 
 function Footer() {
   return (
@@ -78,8 +77,6 @@ function Footer() {
               >
                 <FontAwesomeIcon icon={faInstagram} />
               </a>
-
-             
             </div>
           </div>
         </div>
@@ -94,14 +91,19 @@ function Footer() {
               <FontAwesomeIcon icon={faHeart} className="footer__heart" /> à
               Thoiry.
             </p>
-            <p>Powered by <a href="https://supaco-digital.com/"><span className="supaco">Supaco</span></a></p>
+            <p>
+              Powered by{" "}
+              <a href="https://supaco-digital.com/">
+                <span className="supaco">Supaco</span>
+              </a>
+            </p>
 
             <div className="footer__legal">
-              <a href="#">Mentions légales</a>
+              <Link to="/mention">Mentions légales</Link>
               <span>•</span>
-              <a href="#">Politique de confidentialité</a>
+              <Link to="/politique">Politique de confidentialité</Link>
               <span>•</span>
-              <a href="#">CGV</a>
+              <Link to="/cgv">CGV</Link>
             </div>
           </div>
         </div>

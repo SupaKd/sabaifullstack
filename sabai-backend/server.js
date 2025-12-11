@@ -90,7 +90,7 @@ initDB()
       console.log(`✓ WebSocket sur ws://localhost:${PORT}`);
       console.log(`✓ Health check: http://localhost:${PORT}/health`);
       console.log(`✓ Gestion des heures: http://localhost:${PORT}/api/service-hours`);
-      console.log(`✓ Paiement Stripe: http://localhost:${PORT}/api/payment`); // ✅ AJOUTÉ
+      console.log(`✓ Paiement Stripe: http://localhost:${PORT}/api/payment`); 
       console.log('================================');
     });
   })
