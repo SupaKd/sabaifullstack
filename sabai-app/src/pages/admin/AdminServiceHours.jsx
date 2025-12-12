@@ -1,18 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-
-// Configuration des constantes
-const API_CONFIG = {
-  BASE_URL: 'http://localhost:3000/api/service-hours',
-  ENDPOINTS: {
-    HOURS: '',
-    CLOSURES: '/closures',
-    SETTINGS: '/settings',
-    CLOSURE_DETAIL: (id) => `/closures/${id}`,
-    DAY_DETAIL: (dayOfWeek) => `/${dayOfWeek}`,
-    SETTING_DETAIL: (key) => `/settings/${key}`,
-  }
-};
+import API_CONFIG from '../../services/api.config';
 
 const DAYS_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
@@ -24,13 +12,7 @@ const INITIAL_CLOSURE_STATE = {
   end_time: ''
 };
 
-/**
- * Composant de gestion des horaires de service et des fermetures
- * Permet de configurer les horaires d'ouverture, les fermetures exceptionnelles
- * et les paramètres de disponibilité
- */
 const AdminServiceHours = () => {
-  // États principaux
   const [hours, setHours] = useState([]);
   const [closures, setClosures] = useState([]);
   const [settings, setSettings] = useState({});
@@ -39,16 +21,10 @@ const AdminServiceHours = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [newClosure, setNewClosure] = useState(INITIAL_CLOSURE_STATE);
 
-  /**
-   * Initialisation du composant au montage
-   */
   useEffect(() => {
     loadAllData();
   }, []);
 
-  /**
-   * Charge toutes les données nécessaires en parallèle
-   */
   const loadAllData = async () => {
     try {
       setLoading(true);
@@ -66,12 +42,9 @@ const AdminServiceHours = () => {
     }
   };
 
-  /**
-   * Charge les horaires hebdomadaires
-   */
   const loadHours = async () => {
     try {
-      const response = await fetch(API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.HOURS);
+      const response = await fetch(API_CONFIG.url('/api/service-hours'));
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -90,12 +63,9 @@ const AdminServiceHours = () => {
     }
   };
 
-  /**
-   * Charge la liste des fermetures exceptionnelles
-   */
   const loadClosures = async () => {
     try {
-      const response = await fetch(API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.CLOSURES);
+      const response = await fetch(API_CONFIG.url('/api/service-hours/closures'));
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -114,12 +84,9 @@ const AdminServiceHours = () => {
     }
   };
 
-  /**
-   * Charge les paramètres de service
-   */
   const loadSettings = async () => {
     try {
-      const response = await fetch(API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.SETTINGS);
+      const response = await fetch(API_CONFIG.url('/api/service-hours/settings'));
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -138,17 +105,10 @@ const AdminServiceHours = () => {
     }
   };
 
-  /**
-   * Met à jour les horaires d'un jour spécifique
-   * @param {number} dayOfWeek - Numéro du jour (0-6)
-   * @param {string} openingTime - Heure d'ouverture (HH:MM)
-   * @param {string} closingTime - Heure de fermeture (HH:MM)
-   * @param {boolean} isActive - Si le jour est actif
-   */
   const updateDayHours = async (dayOfWeek, openingTime, closingTime, isActive) => {
     try {
       const response = await fetch(
-        API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.DAY_DETAIL(dayOfWeek),
+        API_CONFIG.url(`/api/service-hours/${dayOfWeek}`),
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -173,10 +133,6 @@ const AdminServiceHours = () => {
     }
   };
 
-  /**
-   * Bascule l'état d'un jour (ouvert/fermé)
-   * @param {Object} day - Objet jour
-   */
   const toggleDay = async (day) => {
     await updateDayHours(
       day.day_of_week,
@@ -186,16 +142,12 @@ const AdminServiceHours = () => {
     );
   };
 
-  /**
-   * Ajoute une nouvelle fermeture exceptionnelle
-   * @param {Event} e - Événement de soumission du formulaire
-   */
   const addClosure = async (e) => {
     e.preventDefault();
     
     try {
       const response = await fetch(
-        API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.CLOSURES,
+        API_CONFIG.url('/api/service-hours/closures'),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -217,10 +169,6 @@ const AdminServiceHours = () => {
     }
   };
 
-  /**
-   * Supprime une fermeture exceptionnelle
-   * @param {number} id - ID de la fermeture
-   */
   const deleteClosure = async (id) => {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette fermeture ?')) {
       return;
@@ -228,7 +176,7 @@ const AdminServiceHours = () => {
 
     try {
       const response = await fetch(
-        API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.CLOSURE_DETAIL(id),
+        API_CONFIG.url(`/api/service-hours/closures/${id}`),
         {
           method: 'DELETE'
         }
@@ -247,15 +195,10 @@ const AdminServiceHours = () => {
     }
   };
 
-  /**
-   * Met à jour un paramètre de service
-   * @param {string} key - Clé du paramètre
-   * @param {string|boolean} value - Nouvelle valeur
-   */
   const updateSetting = async (key, value) => {
     try {
       const response = await fetch(
-        API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.SETTING_DETAIL(key),
+        API_CONFIG.url(`/api/service-hours/settings/${key}`),
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -276,30 +219,16 @@ const AdminServiceHours = () => {
     }
   };
 
-  /**
-   * Gère les erreurs de manière centralisée
-   * @param {string} userMessage - Message affiché à l'utilisateur
-   * @param {Error} error - Erreur originale
-   */
   const handleError = (userMessage, error) => {
     setError(userMessage);
     console.error(userMessage, error);
   };
 
-  /**
-   * Affiche un message de succès temporaire
-   * @param {string} message - Message de succès
-   */
   const showSuccess = useCallback((message) => {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(''), 3000);
   }, []);
 
-  /**
-   * Formate une date pour l'affichage
-   * @param {string} dateString - Date au format ISO
-   * @returns {string} Date formatée
-   */
   const formatClosureDate = useCallback((dateString) => {
     const date = new Date(dateString);
     
@@ -311,7 +240,6 @@ const AdminServiceHours = () => {
     });
   }, []);
 
-  // Afficher l'état de chargement
   if (loading) {
     return (
       <div className="container">
@@ -322,7 +250,6 @@ const AdminServiceHours = () => {
 
   return (
     <div className="admin-service-hours">
-      {/* En-tête de la page */}
       <div className="admin-service-hours__header">
         <div className="admin-service-hours__header-left">
           <Link to="/admin" className="btn-back" title="Retour au dashboard">
@@ -334,7 +261,6 @@ const AdminServiceHours = () => {
         </div>
       </div>
 
-      {/* Messages de feedback */}
       {successMessage && (
         <div className="alert alert--success" role="alert">
           {successMessage}
@@ -356,9 +282,7 @@ const AdminServiceHours = () => {
         </div>
       )}
 
-      {/* Contenu principal en deux colonnes */}
       <div className="service-hours-layout">
-        {/* Colonne principale - Horaires hebdomadaires */}
         <div className="service-hours-main">
           <div className="service-section">
             <div className="service-section__header">
@@ -397,7 +321,6 @@ const AdminServiceHours = () => {
           </div>
         </div>
 
-        {/* Colonne latérale - Fermetures exceptionnelles */}
         <div className="service-hours-sidebar">
           <div className="service-section">
             <div className="service-section__header">
@@ -409,14 +332,12 @@ const AdminServiceHours = () => {
               </p>
             </div>
 
-            {/* Formulaire d'ajout de fermeture */}
             <form 
               onSubmit={addClosure} 
               className="closure-form"
               aria-label="Formulaire d'ajout de fermeture"
             >
               <div className="closure-form__fields">
-                {/* Champ Date */}
                 <div className="form-field">
                   <label htmlFor="closure-date" className="form-field__label">
                     Date de fermeture
@@ -435,7 +356,6 @@ const AdminServiceHours = () => {
                   />
                 </div>
                 
-                {/* Champ Raison */}
                 <div className="form-field">
                   <label htmlFor="closure-reason" className="form-field__label">
                     Raison (optionnel)
@@ -453,7 +373,6 @@ const AdminServiceHours = () => {
                   />
                 </div>
                 
-                {/* Case à cocher Toute la journée */}
                 <div className="form-field form-field--checkbox">
                   <label className="checkbox-label">
                     <input
@@ -469,7 +388,6 @@ const AdminServiceHours = () => {
                   </label>
                 </div>
                 
-                {/* Horaires spécifiques (si pas toute la journée) */}
                 {!newClosure.is_all_day && (
                   <div className="form-field-group" role="group" aria-label="Horaires de fermeture">
                     <div className="form-field">
@@ -518,7 +436,6 @@ const AdminServiceHours = () => {
               </button>
             </form>
 
-            {/* Liste des fermetures existantes */}
             <div className="closures-list">
               <h3 className="closures-list__title">
                 Fermetures programmées ({closures.length})
@@ -548,13 +465,6 @@ const AdminServiceHours = () => {
   );
 };
 
-/**
- * Composant pour afficher et gérer une fermeture
- * @param {Object} props
- * @param {Object} props.closure - Données de la fermeture
- * @param {Function} props.onDelete - Fonction de suppression
- * @param {Function} props.formatDate - Fonction de formatage de date
- */
 const ClosureItem = ({ closure, onDelete, formatDate }) => {
   return (
     <div className="closure-item">
@@ -591,30 +501,16 @@ const ClosureItem = ({ closure, onDelete, formatDate }) => {
   );
 };
 
-/**
- * Composant pour une ligne du tableau des horaires
- * @param {Object} props
- * @param {Object} props.day - Données du jour
- * @param {Array} props.daysNames - Noms des jours
- * @param {Function} props.onUpdate - Fonction de mise à jour
- * @param {Function} props.onToggle - Fonction de basculement
- */
 const DayRow = ({ day, daysNames, onUpdate, onToggle }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [openingTime, setOpeningTime] = useState(day.opening_time.slice(0, 5));
   const [closingTime, setClosingTime] = useState(day.closing_time.slice(0, 5));
 
-  /**
-   * Enregistre les modifications des horaires
-   */
   const handleSave = () => {
     onUpdate(day.day_of_week, openingTime, closingTime, day.is_active);
     setIsEditing(false);
   };
 
-  /**
-   * Annule les modifications en cours
-   */
   const handleCancel = () => {
     setOpeningTime(day.opening_time.slice(0, 5));
     setClosingTime(day.closing_time.slice(0, 5));
@@ -626,12 +522,10 @@ const DayRow = ({ day, daysNames, onUpdate, onToggle }) => {
       className={`day-row ${!day.is_active ? 'day-row--inactive' : ''}`}
       aria-label={`Horaires du ${daysNames[day.day_of_week]}`}
     >
-      {/* Nom du jour */}
       <td className="day-row__day">
         <strong>{daysNames[day.day_of_week]}</strong>
       </td>
 
-      {/* Heure d'ouverture */}
       <td className="day-row__time">
         {isEditing ? (
           <input
@@ -648,7 +542,6 @@ const DayRow = ({ day, daysNames, onUpdate, onToggle }) => {
         )}
       </td>
 
-      {/* Heure de fermeture */}
       <td className="day-row__time">
         {isEditing ? (
           <input
@@ -665,7 +558,6 @@ const DayRow = ({ day, daysNames, onUpdate, onToggle }) => {
         )}
       </td>
 
-      {/* Statut (ouvert/fermé) */}
       <td className="day-row__status">
         <span 
           className={`status-badge ${day.is_active ? 'status-badge--success' : 'status-badge--danger'}`}
@@ -675,7 +567,6 @@ const DayRow = ({ day, daysNames, onUpdate, onToggle }) => {
         </span>
       </td>
 
-      {/* Actions */}
       <td className="day-row__actions">
         {isEditing ? (
           <div className="action-buttons">

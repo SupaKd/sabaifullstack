@@ -14,6 +14,7 @@ import {
   notifyInvalidQuantity,
   notifyStockMaxReached,
 } from "../utils/notify";
+import API_CONFIG from '../services/api.config';
 
 const CartItem = ({ item }) => {
   const { updateQuantity, removeItem } = useCart();
@@ -40,7 +41,7 @@ const CartItem = ({ item }) => {
       return item.product.image_url;
     }
     
-    return `http://localhost:3000${item.product.image_url}`;
+    return API_CONFIG.imageUrl(item.product.image_url); // ✅ Utilise le helper
   };
 
   const handleImageError = (e) => {

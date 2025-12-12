@@ -1,8 +1,6 @@
-// ===== OrderFormWithProtection.jsx =====
-// Composant de formulaire de commande qui se désactive automatiquement quand le service est fermé
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ServiceStatus from './ServiceStatus';
+import API_CONFIG from '../config/api.config';
 
 const OrderFormWithProtection = () => {
   const [serviceOpen, setServiceOpen] = useState(false);
@@ -28,7 +26,7 @@ const OrderFormWithProtection = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/orders', {
+      const response = await fetch(API_CONFIG.url('/api/orders'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,7 +38,6 @@ const OrderFormWithProtection = () => {
 
       if (response.ok && data.success) {
         alert('Commande créée avec succès ! Numéro de commande : ' + data.order_id);
-        // Réinitialiser le formulaire
         setFormData({
           customer_name: '',
           customer_email: '',
@@ -50,7 +47,6 @@ const OrderFormWithProtection = () => {
           items: []
         });
       } else {
-        // Gérer les erreurs spécifiques
         if (response.status === 503) {
           alert(`Service indisponible : ${data.reason || 'Veuillez réessayer plus tard'}`);
         } else {
@@ -72,10 +68,8 @@ const OrderFormWithProtection = () => {
 
   return (
     <div className="order-form-container">
-      {/* Affichage du statut du service */}
       <ServiceStatus onStatusChange={handleStatusChange} />
 
-      {/* Overlay de blocage si le service est fermé */}
       {!serviceOpen && (
         <div className="service-closed-overlay">
           <div className="closed-message">
@@ -87,7 +81,6 @@ const OrderFormWithProtection = () => {
         </div>
       )}
 
-      {/* Formulaire de commande */}
       <form 
         onSubmit={handleSubmit} 
         className={`order-form ${!serviceOpen ? 'disabled' : ''}`}

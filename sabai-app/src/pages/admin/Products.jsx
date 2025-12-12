@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import API_CONFIG from '../../services/api.config';
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -221,10 +222,10 @@ const AdminProducts = () => {
                 <div className="product-admin-card__image-container">
                   {product.image_url ? (
                     <img 
-                      src={`http://localhost:3000${product.image_url}`}
-                      alt={product.name}
-                      className="product-admin-card__image"
-                    />
+                    src={API_CONFIG.imageUrl(product.image_url)} // ✅ Utilise le helper
+                    alt={product.name}
+                    className="product-admin-card__image"
+                  />
                   ) : (
                     <div className="product-admin-card__no-image">
                       🍜<br/>Pas d'image

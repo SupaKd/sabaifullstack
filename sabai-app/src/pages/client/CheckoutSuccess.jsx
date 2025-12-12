@@ -29,7 +29,7 @@ const CheckoutSuccess = () => {
       }
 
       try {
-        const response = await fetch('http://localhost:3000/api/payment/verify-payment', {
+        const response = await fetch('http://145.223.34.3/api/payment/verify-payment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id: sessionId })

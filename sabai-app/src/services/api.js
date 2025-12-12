@@ -1,24 +1,20 @@
-// ===== src/services/api.js ===== (VERSION COMPLÈTE)
-const API_URL = 'http://localhost:3000/api';
+// ===== src/services/api.js =====
+import API_CONFIG from '../services/api.config';
 
 class ApiService {
-  // ✅ Helper pour récupérer le token
   getToken() {
     return localStorage.getItem('admin_token');
   }
 
-  // ✅ Request améliorée avec gestion du token
   async request(endpoint, options = {}) {
-    const url = `${API_URL}${endpoint}`;
+    const url = API_CONFIG.url(endpoint);
     
-    // Préparer les headers
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
 
-    // ✅ Ajouter le token JWT pour les routes admin
-    if (endpoint.startsWith('/admin') && !endpoint.includes('/login')) {
+    if (endpoint.startsWith('/api/admin') && !endpoint.includes('/login')) {
       const token = this.getToken();
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -34,7 +30,6 @@ class ApiService {
       const response = await fetch(url, config);
       const data = await response.json();
 
-      // ✅ Gestion spécifique de l'expiration du token
       if (response.status === 401 && data.code === 'TOKEN_EXPIRED') {
         console.warn('⚠️ Token expiré - Redirection vers login');
         localStorage.removeItem('admin_token');
@@ -61,118 +56,112 @@ class ApiService {
     }
   }
 
-  // ========== PRODUCTS (PUBLIC) ==========
   async getProducts(category = null) {
     const query = category ? `?category=${category}` : '';
-    return this.request(`/products${query}`);
+    return this.request(`/api/products${query}`);
   }
 
   async getProduct(id) {
-    return this.request(`/products/${id}`);
+    return this.request(`/api/products/${id}`);
   }
 
   async getCategories() {
-    return this.request('/products/categories');
+    return this.request('/api/products/categories');
   }
 
-  // ========== ORDERS (PUBLIC) ==========
   async createOrder(orderData) {
-    return this.request('/orders', {
+    return this.request('/api/orders', {
       method: 'POST',
       body: JSON.stringify(orderData),
     });
   }
 
   async getOrder(id) {
-    return this.request(`/orders/${id}`);
+    return this.request(`/api/orders/${id}`);
   }
 
-  // ========== SERVICE HOURS (PUBLIC) ==========
   async getServiceHours() {
-    return this.request('/service-hours');
+    return this.request('/api/service-hours');
   }
 
   async getServiceStatus() {
-    return this.request('/service-hours/status');
+    return this.request('/api/service-hours/status');
   }
 
   async getDeliveryStatus() {
-    return this.request('/service-hours/delivery-status');
+    return this.request('/api/service-hours/delivery-status');
   }
 
   async getServiceSettings() {
-    return this.request('/service-hours/settings');
+    return this.request('/api/service-hours/settings');
   }
 
   // ========== ADMIN - AUTH ==========
-  async adminLogin(credentials) {
-    const response = await this.request('/admin/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-    
-    // ✅ Stocker le token après login
-    if (response.token) {
-      localStorage.setItem('admin_token', response.token);
-    }
-    
-    return response;
+async adminLogin(credentials) {
+  const response = await this.request('/api/admin/login', {  // ✅ Ajoute /api/
+    method: 'POST',
+    body: JSON.stringify(credentials),
+  });
+  
+  if (response.token) {
+    localStorage.setItem('admin_token', response.token);
   }
+  
+  return response;
+}
 
-  async verifyToken() {
-    return this.request('/admin/verify');
-  }
+async verifyToken() {
+  return this.request('/api/admin/verify');  // ✅ Ajoute /api/
+}
 
-  async adminLogout() {
-    try {
-      await this.request('/admin/logout', { method: 'POST' });
-    } catch (error) {
-      console.log('Logout error (ignoré):', error);
-    } finally {
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_user');
-    }
+async adminLogout() {
+  try {
+    await this.request('/api/admin/logout', { method: 'POST' });  // ✅ Ajoute /api/
+  } catch (error) {
+    console.log('Logout error (ignoré):', error);
+  } finally {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_user');
   }
+}
 
   // ========== ADMIN - ORDERS ==========
-  async getAdminOrders(status = null, limit = 50) {
-    const query = status ? `?status=${status}&limit=${limit}` : `?limit=${limit}`;
-    return this.request(`/admin/orders${query}`);
-  }
+async getAdminOrders(status = null, limit = 50) {
+  const query = status ? `?status=${status}&limit=${limit}` : `?limit=${limit}`;
+  return this.request(`/api/admin/orders${query}`);  // ✅ Vérifie que /api/ est bien là
+}
 
-  async updateOrderStatus(orderId, status) {
-    return this.request(`/admin/orders/${orderId}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
-  }
+async updateOrderStatus(orderId, status) {
+  return this.request(`/api/admin/orders/${orderId}/status`, {  // ✅ /api/
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
 
-  // ========== ADMIN - PRODUCTS ==========
-  async getAdminProducts() {
-    return this.request('/admin/products');
-  }
+// ========== ADMIN - PRODUCTS ==========
+async getAdminProducts() {
+  return this.request('/api/admin/products');  // ✅ /api/
+}
 
-  async updateProductStock(productId, stock) {
-    return this.request(`/admin/products/${productId}/stock`, {
-      method: 'PATCH',
-      body: JSON.stringify({ stock }),
-    });
-  }
+async updateProductStock(productId, stock) {
+  return this.request(`/api/admin/products/${productId}/stock`, {  // ✅ /api/
+    method: 'PATCH',
+    body: JSON.stringify({ stock }),
+  });
+}
 
-  // ✅ NOUVELLE MÉTHODE : Disponibilité produit
-  async updateProductAvailability(productId, available) {
-    return this.request(`/admin/products/${productId}/availability`, {
-      method: 'PATCH',
-      body: JSON.stringify({ available }),
-    });
-  }
+async updateProductAvailability(productId, available) {
+  return this.request(`/api/admin/products/${productId}/availability`, {  // ✅ /api/
+    method: 'PATCH',
+    body: JSON.stringify({ available }),
+  });
+}
 
-  // ========== ADMIN - STATS ==========
-  async getAdminStats() {
-    return this.request('/admin/stats');
-  }
+// ========== ADMIN - STATS ==========
+async getAdminStats() {
+  return this.request('/api/admin/stats');  // ✅ /api/
+}
 
-  // ========== ADMIN - IMAGES ==========
   async uploadProductImage(productId, file) {
     const token = this.getToken();
     const formData = new FormData();
@@ -183,15 +172,17 @@ class ApiService {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_URL}/admin/products/${productId}/image`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
+    const response = await fetch(
+      API_CONFIG.url(`/admin/products/${productId}/image`),
+      {
+        method: 'POST',
+        headers,
+        body: formData,
+      }
+    );
 
     const data = await response.json();
 
-    // Gérer l'expiration du token
     if (response.status === 401) {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_user');
@@ -206,27 +197,27 @@ class ApiService {
     return data;
   }
 
-  // ========== ADMIN - SERVICE HOURS ==========
-  async updateServiceHours(dayOfWeek, data) {
-    return this.request(`/service-hours/${dayOfWeek}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
+// ========== ADMIN - SERVICE HOURS ==========
+async updateServiceHours(dayOfWeek, data) {
+  return this.request(`/api/service-hours/${dayOfWeek}`, {  // ✅ Vérifie que /api/ est là
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
 
-  async updateDeliveryEnabled(enabled) {
-    return this.request('/service-hours/settings/delivery_enabled', {
-      method: 'PUT',
-      body: JSON.stringify({ value: enabled ? 'true' : 'false' }),
-    });
-  }
+async updateDeliveryEnabled(enabled) {
+  return this.request('/api/service-hours/settings/delivery_enabled', {  // ✅ /api/
+    method: 'PUT',
+    body: JSON.stringify({ value: enabled ? 'true' : 'false' }),
+  });
+}
 
-  async updateSetting(key, value) {
-    return this.request(`/service-hours/settings/${key}`, {
-      method: 'PUT',
-      body: JSON.stringify({ value: value.toString() }),
-    });
-  }
+async updateSetting(key, value) {
+  return this.request(`/api/service-hours/settings/${key}`, {  // ✅ /api/
+    method: 'PUT',
+    body: JSON.stringify({ value: value.toString() }),
+  });
+}
 }
 
 export default new ApiService();

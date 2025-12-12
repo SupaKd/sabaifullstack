@@ -1,4 +1,4 @@
-// ===== server.js ===== (VERSION STRIPE)
+// ===== server.js ===== (VERSION CORRIGÉE)
 
 // Import des modules principaux
 const express = require('express');
@@ -14,17 +14,28 @@ const productsRoutes = require('./routes/products');
 const ordersRoutes = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
 const serviceHoursRoutes = require('./routes/serviceHours');
-const paymentRoutes = require('./routes/payment'); // ✅ AJOUTÉ
+const paymentRoutes = require('./routes/payment');
 
-// ⭐ IMPORT CORRIGÉ DU ERROR HANDLER
+// Import du error handler
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // Initialisation d'Express et du serveur HTTP
 const app = express();
 const server = http.createServer(app);
 
-// Middlewares globaux
-app.use(cors());
+// Middlewares globaux - CORS CORRIGÉ
+app.use(cors({
+  origin: [
+    'https://white-lark-930387.hostingersite.com',
+    'http://white-lark-930387.hostingersite.com',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -39,7 +50,7 @@ app.use('/api/products', productsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/service-hours', serviceHoursRoutes);
-app.use('/api/payment', paymentRoutes); // ✅ AJOUTÉ
+app.use('/api/payment', paymentRoutes);
 
 // Route d'accueil
 app.get('/', (req, res) => {
@@ -52,7 +63,7 @@ app.get('/', (req, res) => {
       orders: '/api/orders',
       admin: '/api/admin',
       serviceHours: '/api/service-hours',
-      payment: '/api/payment' // ✅ AJOUTÉ
+      payment: '/api/payment'
     }
   });
 });
@@ -69,10 +80,10 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// ⭐ 404 HANDLER - Doit être AVANT errorHandler
+// 404 HANDLER - Doit être AVANT errorHandler
 app.use(notFoundHandler);
 
-// ⭐ ERROR HANDLER - Doit être le dernier middleware
+// ERROR HANDLER - Doit être le dernier middleware
 app.use(errorHandler);
 
 // Démarrage du serveur

@@ -16,6 +16,7 @@ import { notifyCartCleared, notifyStockIssue } from "../../utils/notify";
 import CartItem from "../../components/CartItem";
 import { useEffect, useState } from "react";
 import DeliveryClosedModal from "../../components/DeliveryClosedModal";
+import API_CONFIG from '../../services/api.config';
 
 const Cart = () => {
   const { items, getTotal, clearCart } = useCart();
@@ -34,9 +35,8 @@ const Cart = () => {
   useEffect(() => {
     const checkServiceStatus = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:3000/api/service-hours/status"
-        );
+        const response = await fetch(API_CONFIG.url('/api/service-hours/status'));
+
         const data = await response.json();
         if (data.success) {
           setServiceOpen(data.data.open);
@@ -58,9 +58,8 @@ const Cart = () => {
   useEffect(() => {
     const loadDeliverySettings = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:3000/api/service-hours/settings"
-        );
+        const response = await fetch(API_CONFIG.url('/api/service-hours/settings'));
+
         const data = await response.json();
         if (data.success) {
           setDeliveryFee(Number(data.data.delivery_fee) || 5);

@@ -66,7 +66,7 @@ const AdminDashboard = () => {
       }
 
       // ✅ Charger les settings via API
-      const settings = await api.request("/service-hours/settings");
+      const settings = await api.getServiceSettings();
 
       if (settings.success) {
         setServiceEnabled(settings.data.service_enabled === "true");

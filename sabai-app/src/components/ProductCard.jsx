@@ -3,6 +3,7 @@ import { useCart } from "../context/CartContext";
 import { useServiceStatus } from "../context/ServiceStatusContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faClock } from "@fortawesome/free-solid-svg-icons";
+import API_CONFIG from '../services/api.config';
 
 // Notifications
 import {
@@ -155,11 +156,11 @@ const ProductCard = ({ product }) => {
       </div>
 
       {product.image_url && (
-        <img
-          src={`http://localhost:3000${product.image_url}`}
-          alt={product.name}
-          className="product-card__image"
-        />
+       <img
+       src={API_CONFIG.imageUrl(product.image_url)} 
+       alt={product.name}
+       className="product-card__image"
+     />
       )}
     </div>
   );

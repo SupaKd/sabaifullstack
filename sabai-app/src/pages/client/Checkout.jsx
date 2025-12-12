@@ -19,6 +19,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { notifyOrderError } from "../../utils/notify";
 import DeliveryClosedModal from "../../components/DeliveryClosedModal";
+import API_CONFIG from "../../services/api.config";
 
 const PAYS_DE_GEX_CITIES = [
   { name: "Thoiry", postalCode: "01710" },
@@ -74,8 +75,9 @@ const Checkout = () => {
     const checkServiceStatus = async () => {
       try {
         const response = await fetch(
-          "http://localhost:3000/api/service-hours/status"
+          API_CONFIG.url("/api/service-hours/status")
         );
+
         const data = await response.json();
         if (data.success) {
           setServiceOpen(data.data.open);
@@ -97,8 +99,9 @@ const Checkout = () => {
     const checkDeliveryStatus = async () => {
       try {
         const response = await fetch(
-          "http://localhost:3000/api/service-hours/delivery-status"
+          API_CONFIG.url("/api/service-hours/delivery-status")
         );
+
         const data = await response.json();
         if (data.success) {
           setDeliveryAvailable(data.data.delivery_available);
@@ -124,8 +127,9 @@ const Checkout = () => {
     const loadDeliverySettings = async () => {
       try {
         const response = await fetch(
-          "http://localhost:3000/api/service-hours/settings"
+          API_CONFIG.url("/api/service-hours/settings")
         );
+
         const data = await response.json();
         if (data.success) {
           setDeliveryFee(parseFloat(data.data.delivery_fee) || 5);
@@ -141,7 +145,7 @@ const Checkout = () => {
 
   const loadServiceHours = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/service-hours");
+      const response = await fetch(API_CONFIG.url("/api/service-hours"));
       const data = await response.json();
       if (data.success) setServiceHours(data.data);
     } catch (err) {
@@ -317,12 +321,13 @@ const Checkout = () => {
       }
 
       // ✅ Créer la session Stripe
+      // ✅ Créer la session Stripe
       const response = await fetch(
-        "http://localhost:3000/api/payment/create-checkout-session",
+        API_CONFIG.url("/api/payment/create-checkout-session"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orderData),
+          body: JSON.stringify(orderData), 
         }
       );
 

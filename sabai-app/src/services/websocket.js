@@ -17,7 +17,11 @@ class WebSocketService {
 
     this.isConnecting = true;
     this.shouldReconnect = true;
-    const url = 'ws://localhost:3000';
+    
+    // ✅ URL CORRIGÉE
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://145.223.34.3';
+    const url = baseUrl.replace('https://', 'wss://').replace('http://', 'ws://');
+    
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
