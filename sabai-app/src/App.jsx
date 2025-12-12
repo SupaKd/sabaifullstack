@@ -13,7 +13,7 @@ import CheckoutSuccess from './pages/client/CheckoutSuccess';
 import Cgv from './pages/client/Cgv';
 import Politique from './pages/client/Politique';
 import Mention from './pages/client/Mention';
-import NotFound from './pages/NotFound'; // ✅ AJOUTÉ
+import NotFound from './pages/NotFound'; 
 
 // Admin pages
 import AdminLogin from './pages/admin/Login';

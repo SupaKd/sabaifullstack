@@ -1,7 +1,7 @@
 // ===== src/config/api.config.js =====
 // Configuration centralisée de l'API
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://145.223.34.3';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sabai-thoiry.com';
 
 export const API_CONFIG = {
   BASE_URL: API_BASE_URL,

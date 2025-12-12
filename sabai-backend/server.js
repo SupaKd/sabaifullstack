@@ -28,6 +28,7 @@ app.use(cors({
   origin: [
     'https://white-lark-930387.hostingersite.com',
     'http://white-lark-930387.hostingersite.com',
+    'https://sabai-thoiry.com',
     'http://localhost:5173',
     'http://localhost:3000'
   ],

@@ -1,4 +1,6 @@
 .container__home {
+  position: relative;  // Permet à l’image de se positionner correctement
+
 
   h1 {
     font-size: 2.5rem;
@@ -15,16 +17,6 @@
   }
 }
 
-/* ============================
-   DECORATION TOP
-============================ */
-.deco__top {
-  background-color: #222;
-  padding: 20rem 0rem 0rem 0rem;
-}
-/* ============================
-   FILTERS — PILL BUTTONS
-============================ */
 /* ===========================
    BARRE DE FILTRES STICKY
 =========================== */
@@ -221,32 +213,36 @@
   padding-top: $spacing-xs;
 }
 
-/* ============================
-   IMAGE OVERLAY ENTRE HERO & MENU
-============================ */
 .menu__overlay-image {
   position: absolute;
-  top: 900px;
-  left: 80%;
-  transform: translateX(-50%);
-  width: 80px;
+  top: 10px;                    // Colle juste sous le Hero sur mobile
+  right: 5%;
+  width: clamp(80px, 10vw, 150px);
   pointer-events: none;
-  z-index: -1;
+  z-index: 1;                    // Passe au-dessus du fond mais sous le texte si nécessaire
+  opacity: 0.9;
 
-  @media screen and (min-width: 768px) {
-    top: 900px;
-    width: 100px;
+  @media (min-width: 640px) {
+    top: 20px;
+    right: 8%;
   }
-  @media screen and (min-width: 1024px) {
-    top: 900px;
-    width: 120px;
+
+  @media (min-width: 768px) {
+    top: 20px;
+    right: 10%;
   }
-  @media screen and (min-width: 1280px) {
-    top: 820px;
-    width: 150px;
-    left: 85%;    
+
+  @media (min-width: 1024px) {
+    top: 20px;
+    right: 12%;
+  }
+
+  @media (min-width: 1280px) {
+    top: 0px;
+    right: 15%;
   }
 }
+
 
 /* ============================
    RESPONSIVE — MOBILE FIRST
