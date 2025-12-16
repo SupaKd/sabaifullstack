@@ -1,4 +1,4 @@
-// ===== src/pages/client/Checkout.jsx ===== (VERSION STRIPE)
+// ===== src/pages/client/Checkout.jsx ===== (VERSION CORRIGÉE + STRIPE)
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
@@ -19,7 +19,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { notifyOrderError } from "../../utils/notify";
 import DeliveryClosedModal from "../../components/DeliveryClosedModal";
-import API_CONFIG from "../../services/api.config";
+import api from "../../services/api"; // ✅ CHANGEMENT
 
 const PAYS_DE_GEX_CITIES = [
   { name: "Thoiry", postalCode: "01710" },
@@ -71,14 +71,11 @@ const Checkout = () => {
     if (serviceHours) generateTimeSlots();
   }, [serviceHours, formData.order_type]);
 
+  // ✅ CORRIGÉ : Vérifier statut service
   useEffect(() => {
     const checkServiceStatus = async () => {
       try {
-        const response = await fetch(
-          API_CONFIG.url("/api/service-hours/status")
-        );
-
-        const data = await response.json();
+        const data = await api.getServiceStatus();
         if (data.success) {
           setServiceOpen(data.data.open);
           if (!data.data.open) setShowModal(true);
@@ -95,14 +92,11 @@ const Checkout = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // ✅ CORRIGÉ : Vérifier statut livraison
   useEffect(() => {
     const checkDeliveryStatus = async () => {
       try {
-        const response = await fetch(
-          API_CONFIG.url("/api/service-hours/delivery-status")
-        );
-
-        const data = await response.json();
+        const data = await api.getDeliveryStatus();
         if (data.success) {
           setDeliveryAvailable(data.data.delivery_available);
 
@@ -123,14 +117,11 @@ const Checkout = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // ✅ CORRIGÉ : Charger paramètres livraison
   useEffect(() => {
     const loadDeliverySettings = async () => {
       try {
-        const response = await fetch(
-          API_CONFIG.url("/api/service-hours/settings")
-        );
-
-        const data = await response.json();
+        const data = await api.getServiceSettings();
         if (data.success) {
           setDeliveryFee(parseFloat(data.data.delivery_fee) || 5);
           setDeliveryMinAmount(parseFloat(data.data.delivery_min_amount) || 30);
@@ -143,10 +134,10 @@ const Checkout = () => {
     loadDeliverySettings();
   }, []);
 
+  // ✅ CORRIGÉ : Charger horaires
   const loadServiceHours = async () => {
     try {
-      const response = await fetch(API_CONFIG.url("/api/service-hours"));
-      const data = await response.json();
+      const data = await api.getServiceHours();
       if (data.success) setServiceHours(data.data);
     } catch (err) {
       console.error("Erreur horaires:", err);
@@ -280,7 +271,7 @@ const Checkout = () => {
     return cartTotal;
   };
 
-  // ✅ VERSION STRIPE - Nouvelle fonction handleSubmit
+  // ✅ CORRIGÉ : Utiliser api.createCheckoutSession
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -320,18 +311,8 @@ const Checkout = () => {
         orderData.delivery_address = `${formData.delivery_address}, ${formData.postal_code} ${formData.city}`;
       }
 
-      // ✅ Créer la session Stripe
-      // ✅ Créer la session Stripe
-      const response = await fetch(
-        API_CONFIG.url("/api/payment/create-checkout-session"),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orderData), 
-        }
-      );
-
-      const data = await response.json();
+      // ✅ Utiliser api.createCheckoutSession
+      const data = await api.createCheckoutSession(orderData);
 
       if (!data.success) {
         throw new Error(
@@ -339,15 +320,13 @@ const Checkout = () => {
         );
       }
 
-      // ✅ Rediriger vers Stripe Checkout (nouvelle méthode)
+      // ✅ Rediriger vers Stripe Checkout
       if (data.url) {
         window.location.href = data.url;
       } else {
         throw new Error("URL de paiement non reçue");
       }
 
-      // Note: Pas besoin de clearCart() ici car la redirection se fait avant
-      // Le panier sera vidé dans CheckoutSuccess après confirmation du paiement
     } catch (err) {
       console.error("Erreur commande:", err);
       setError(err.message);

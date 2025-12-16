@@ -1,0 +1,166 @@
+// ===== src/styles/components/_error-boundary.scss =====
+
+.error-boundary {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+  
+    &__content {
+      max-width: 600px;
+      text-align: center;
+      animation: fadeIn 0.5s ease-out;
+    }
+  
+    &__icon {
+      font-size: 5rem;
+      color: #ef4444;
+      margin-bottom: 2rem;
+      animation: bounce 1s ease-in-out infinite;
+    }
+  
+    &__title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 1rem;
+    }
+  
+    &__message {
+      font-size: 1.1rem;
+      color: #6b7280;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+  
+    &__details {
+      text-align: left;
+      margin: 2rem 0;
+      padding: 1rem;
+      background: #fef2f2;
+      border: 2px solid #fee2e2;
+      border-radius: 8px;
+  
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+        color: #991b1b;
+        padding: 0.5rem;
+  
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+  
+    &__stack {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #ffffff;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      color: #374151;
+      line-height: 1.4;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+  
+    &__actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  
+    &__btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+  
+      &--primary {
+        background: #ef4444;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  
+        &:hover {
+          background: #dc2626;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+        }
+      }
+  
+      &--secondary {
+        background: #ffffff;
+        color: #1f2937;
+        border: 2px solid #e5e7eb;
+  
+        &:hover {
+          background: #f9fafb;
+          border-color: #d1d5db;
+          transform: translateY(-2px);
+        }
+      }
+  
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  // Responsive
+  @media (max-width: 768px) {
+    .error-boundary {
+      padding: 1rem;
+  
+      &__icon {
+        font-size: 3.5rem;
+      }
+  
+      &__title {
+        font-size: 1.5rem;
+      }
+  
+      &__message {
+        font-size: 1rem;
+      }
+  
+      &__actions {
+        flex-direction: column;
+        width: 100%;
+  
+        button {
+          width: 100%;
+        }
+      }
+    }
+  }

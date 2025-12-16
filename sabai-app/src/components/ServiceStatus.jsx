@@ -1,7 +1,8 @@
+// ===== src/components/ServiceStatus.jsx ===== (VERSION CORRIGÉE)
 import { useEffect, useCallback, useState } from "react";
 import { useServiceStatus } from "../context/ServiceStatusContext";
 import DeliveryClosedModal from "./DeliveryClosedModal";
-import API_CONFIG from '../services/api.config';
+import api from '../services/api'; // ✅ CHANGEMENT 1
 
 const CHECK_INTERVAL = 60000; // 1 minute
 
@@ -11,8 +12,8 @@ const ServiceStatus = ({ onStatusChange }) => {
 
   const checkStatus = useCallback(async () => {
     try {
-      const response = await fetch(API_CONFIG.url('/api/service-hours/status'));
-      const data = await response.json();
+      // ✅ CHANGEMENT 2 : Utiliser api.js
+      const data = await api.getServiceStatus();
 
       if (data.success) {
         setServiceStatus(data.data);

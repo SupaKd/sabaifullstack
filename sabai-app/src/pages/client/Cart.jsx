@@ -1,4 +1,4 @@
-// ===== src/pages/client/Cart.jsx =====
+// ===== src/pages/client/Cart.jsx ===== (VERSION CORRIGÉE)
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -16,7 +16,7 @@ import { notifyCartCleared, notifyStockIssue } from "../../utils/notify";
 import CartItem from "../../components/CartItem";
 import { useEffect, useState } from "react";
 import DeliveryClosedModal from "../../components/DeliveryClosedModal";
-import API_CONFIG from '../../services/api.config';
+import api from '../../services/api'; // ✅ CHANGEMENT
 
 const Cart = () => {
   const { items, getTotal, clearCart } = useCart();
@@ -31,13 +31,11 @@ const Cart = () => {
   const [deliveryFee, setDeliveryFee] = useState(5);
   const [deliveryMinAmount, setDeliveryMinAmount] = useState(30);
 
-  // Vérifier statut du service
+  // ✅ CORRIGÉ : Vérifier statut du service
   useEffect(() => {
     const checkServiceStatus = async () => {
       try {
-        const response = await fetch(API_CONFIG.url('/api/service-hours/status'));
-
-        const data = await response.json();
+        const data = await api.getServiceStatus();
         if (data.success) {
           setServiceOpen(data.data.open);
           if (!data.data.open) setShowModal(true);
@@ -54,13 +52,11 @@ const Cart = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Charger les paramètres de livraison depuis la BDD
+  // ✅ CORRIGÉ : Charger les paramètres de livraison depuis la BDD
   useEffect(() => {
     const loadDeliverySettings = async () => {
       try {
-        const response = await fetch(API_CONFIG.url('/api/service-hours/settings'));
-
-        const data = await response.json();
+        const data = await api.getServiceSettings();
         if (data.success) {
           setDeliveryFee(Number(data.data.delivery_fee) || 5);
           setDeliveryMinAmount(Number(data.data.delivery_min_amount) || 30);
@@ -152,8 +148,6 @@ const Cart = () => {
               </span>
             </h1>
           </div>
-
-          
         </div>
 
         {/* Contenu */}
@@ -167,7 +161,6 @@ const Cart = () => {
               Vider le panier
             </button>
           </div>
-          
 
           {/* Résumé */}
           <div className="cart__summary">
@@ -189,7 +182,6 @@ const Cart = () => {
                   </span>
                 </div>
               </div>
-              
 
               {/* Règles livraison */}
               <div className="cart-summary__rules">
@@ -248,7 +240,6 @@ const Cart = () => {
                 <p>
                   <FontAwesomeIcon icon={faLock} /> Paiement sécurisé via Stripe
                 </p>
-                
               </div>
             </div>
           </div>

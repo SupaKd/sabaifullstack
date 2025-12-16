@@ -1,223 +1,233 @@
-// ===== src/services/api.js =====
-import API_CONFIG from '../services/api.config';
+// ===== src/services/api.js ===== (CORRECTION)
+import API_CONFIG from './api.config';
 
-class ApiService {
-  getToken() {
-    return localStorage.getItem('admin_token');
+class APIService {
+  constructor() {
+    this.baseURL = API_CONFIG.baseURL;
   }
 
   async request(endpoint, options = {}) {
-    const url = API_CONFIG.url(endpoint);
+    // ✅ CORRECTION : Utiliser API_CONFIG.url() au lieu de this.baseURL
+    const url = API_CONFIG.url(endpoint); // ← ICI LA CORRECTION
     
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
-
-    if (endpoint.startsWith('/api/admin') && !endpoint.includes('/login')) {
-      const token = this.getToken();
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-    }
-
     const config = {
       ...options,
-      headers,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
     };
 
     try {
       const response = await fetch(url, config);
       const data = await response.json();
 
-      if (response.status === 401 && data.code === 'TOKEN_EXPIRED') {
-        console.warn('⚠️ Token expiré - Redirection vers login');
-        localStorage.removeItem('admin_token');
-        localStorage.removeItem('admin_user');
-        window.location.href = '/admin/login';
-        throw new Error('Session expirée');
-      }
-
       if (!response.ok) {
-        console.error('❌ Erreur API:', {
-          status: response.status,
-          endpoint,
-          error: data.error,
-          details: data.details,
-          code: data.code
-        });
-        throw new Error(data.error || 'Une erreur est survenue');
+        if (response.status === 401 && data.code === 'TOKEN_EXPIRED') {
+          console.warn('Session expirée');
+          window.location.href = '/admin/login';
+          throw new Error('Session expirée');
+        }
+
+        throw new Error(data.error || `Erreur HTTP ${response.status}`);
       }
 
       return data;
     } catch (error) {
-      console.error('API Error:', error);
+      console.error(`Erreur API ${endpoint}:`, error);
       throw error;
     }
   }
 
-  async getProducts(category = null) {
-    const query = category ? `?category=${category}` : '';
-    return this.request(`/api/products${query}`);
+  // ========== MÉTHODES PRODUITS ==========
+
+  async getProducts() {
+    return this.request('/products');
   }
 
   async getProduct(id) {
-    return this.request(`/api/products/${id}`);
+    return this.request(`/products/${id}`);
   }
 
   async getCategories() {
-    return this.request('/api/products/categories');
+    return this.request('/products/categories');
   }
 
+  // ========== MÉTHODES COMMANDES ==========
+
   async createOrder(orderData) {
-    return this.request('/api/orders', {
+    return this.request('/orders', {
       method: 'POST',
-      body: JSON.stringify(orderData),
+      body: JSON.stringify(orderData)
     });
   }
 
+  // ========== MÉTHODES ADMIN (nécessitent authentification) ==========
+
+  async getAdminOrders(filters = {}) {
+    const queryString = new URLSearchParams(filters).toString();
+    return this.request(`/admin/orders${queryString ? `?${queryString}` : ''}`);
+  }
+
   async getOrder(id) {
-    return this.request(`/api/orders/${id}`);
+    return this.request(`/admin/orders/${id}`);
   }
 
-  async getServiceHours() {
-    return this.request('/api/service-hours');
+  async updateOrderStatus(id, status) {
+    return this.request(`/admin/orders/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status })
+    });
   }
 
-  async getServiceStatus() {
-    return this.request('/api/service-hours/status');
+  async getAdminProducts() {
+    return this.request('/admin/products');
   }
 
-  async getDeliveryStatus() {
-    return this.request('/api/service-hours/delivery-status');
+  async updateProductStock(id, stock) {
+    return this.request(`/admin/products/${id}/stock`, {
+      method: 'PATCH',
+      body: JSON.stringify({ stock })
+    });
   }
 
-  async getServiceSettings() {
-    return this.request('/api/service-hours/settings');
+  async updateProductAvailability(id, available) {
+    return this.request(`/admin/products/${id}/availability`, {
+      method: 'PATCH',
+      body: JSON.stringify({ available })
+    });
   }
 
-  // ========== ADMIN - AUTH ==========
-async adminLogin(credentials) {
-  const response = await this.request('/api/admin/login', {  // ✅ Ajoute /api/
-    method: 'POST',
-    body: JSON.stringify(credentials),
-  });
-  
-  if (response.token) {
-    localStorage.setItem('admin_token', response.token);
+  async createProduct(productData) {
+    return this.request('/admin/products', {
+      method: 'POST',
+      body: JSON.stringify(productData)
+    });
   }
-  
-  return response;
-}
 
-async verifyToken() {
-  return this.request('/api/admin/verify');  // ✅ Ajoute /api/
-}
-
-async adminLogout() {
-  try {
-    await this.request('/api/admin/logout', { method: 'POST' });  // ✅ Ajoute /api/
-  } catch (error) {
-    console.log('Logout error (ignoré):', error);
-  } finally {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_user');
+  async updateProduct(id, productData) {
+    return this.request(`/admin/products/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(productData)
+    });
   }
-}
 
-  // ========== ADMIN - ORDERS ==========
-async getAdminOrders(status = null, limit = 50) {
-  const query = status ? `?status=${status}&limit=${limit}` : `?limit=${limit}`;
-  return this.request(`/api/admin/orders${query}`);  // ✅ Vérifie que /api/ est bien là
-}
+  async deleteProduct(id) {
+    return this.request(`/admin/products/${id}`, {
+      method: 'DELETE'
+    });
+  }
 
-async updateOrderStatus(orderId, status) {
-  return this.request(`/api/admin/orders/${orderId}/status`, {  // ✅ /api/
-    method: 'PATCH',
-    body: JSON.stringify({ status }),
-  });
-}
-
-// ========== ADMIN - PRODUCTS ==========
-async getAdminProducts() {
-  return this.request('/api/admin/products');  // ✅ /api/
-}
-
-async updateProductStock(productId, stock) {
-  return this.request(`/api/admin/products/${productId}/stock`, {  // ✅ /api/
-    method: 'PATCH',
-    body: JSON.stringify({ stock }),
-  });
-}
-
-async updateProductAvailability(productId, available) {
-  return this.request(`/api/admin/products/${productId}/availability`, {  // ✅ /api/
-    method: 'PATCH',
-    body: JSON.stringify({ available }),
-  });
-}
-
-// ========== ADMIN - STATS ==========
-async getAdminStats() {
-  return this.request('/api/admin/stats');  // ✅ /api/
-}
-
-  async uploadProductImage(productId, file) {
-    const token = this.getToken();
+  // ✅ Upload image (FormData, pas JSON)
+  async uploadProductImage(id, file) {
     const formData = new FormData();
     formData.append('image', file);
 
-    const headers = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    const url = `${this.baseURL}/admin/products/${id}/image`;
 
-    const response = await fetch(
-      API_CONFIG.url(`/admin/products/${productId}/image`),
-      {
+    try {
+      const response = await fetch(url, {
         method: 'POST',
-        headers,
-        body: formData,
+        credentials: 'include', // ✅ Envoyer cookies
+        body: formData
+        // ❌ NE PAS mettre Content-Type (géré automatiquement avec FormData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Erreur HTTP ${response.status}`);
       }
-    );
 
-    const data = await response.json();
-
-    if (response.status === 401) {
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_user');
-      window.location.href = '/admin/login';
-      throw new Error('Session expirée');
+      return data;
+    } catch (error) {
+      console.error('Erreur upload image:', error);
+      throw error;
     }
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Erreur upload');
-    }
-
-    return data;
   }
 
-// ========== ADMIN - SERVICE HOURS ==========
-async updateServiceHours(dayOfWeek, data) {
-  return this.request(`/api/service-hours/${dayOfWeek}`, {  // ✅ Vérifie que /api/ est là
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
+  async deleteProductImage(id) {
+    return this.request(`/admin/products/${id}/image`, {
+      method: 'DELETE'
+    });
+  }
+
+  async getAdminStats() {
+    return this.request('/admin/stats');
+  }
+
+  // ========== HORAIRES DE SERVICE ==========
+
+  async getServiceHours() {
+    return this.request('/service-hours');
+  }
+
+  async getServiceStatus() {
+    return this.request('/service-hours/status');
+  }
+
+  async getDeliveryStatus() {
+    return this.request('/service-hours/delivery-status');
+  }
+
+  async updateDayHours(dayOfWeek, hoursData) {
+    return this.request(`/service-hours/${dayOfWeek}`, {
+      method: 'PUT',
+      body: JSON.stringify(hoursData)
+    });
+  }
+
+  async getClosures() {
+    return this.request('/service-hours/closures');
+  }
+
+  async addClosure(closureData) {
+    return this.request('/service-hours/closures', {
+      method: 'POST',
+      body: JSON.stringify(closureData)
+    });
+  }
+
+  async deleteClosure(id) {
+    return this.request(`/service-hours/closures/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async getServiceSettings() {
+    return this.request('/service-hours/settings');
+  }
+
+  async updateServiceSetting(key, value) {
+    return this.request(`/service-hours/settings/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value })
+    });
+  }
+
+  async updateDeliveryEnabled(value) {
+    return this.request('/service-hours/settings/delivery_enabled', {
+      method: 'PUT',
+      body: JSON.stringify({ value })
+    });
+  }
+
+  // ========== PAIEMENT STRIPE ==========
+
+  async createCheckoutSession(orderData) {
+    return this.request('/payment/create-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify(orderData)
+    });
+  }
+
+  async verifyPayment(sessionId) {
+    return this.request('/payment/verify-payment', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId })
+    });
+  }
 }
 
-async updateDeliveryEnabled(enabled) {
-  return this.request('/api/service-hours/settings/delivery_enabled', {  // ✅ /api/
-    method: 'PUT',
-    body: JSON.stringify({ value: enabled ? 'true' : 'false' }),
-  });
-}
-
-async updateSetting(key, value) {
-  return this.request(`/api/service-hours/settings/${key}`, {  // ✅ /api/
-    method: 'PUT',
-    body: JSON.stringify({ value: value.toString() }),
-  });
-}
-}
-
-export default new ApiService();
+export default new APIService();

@@ -1,5 +1,6 @@
-// ===== src/context/AuthContext.jsx ===== (VERSION AMÉLIORÉE)
-import { createContext, useContext, useState } from 'react';
+// ===== src/context/AuthContext.jsx =====
+import { createContext, useContext, useState, useEffect } from 'react';
+import API_CONFIG from '../services/api.config';
 
 const AuthContext = createContext();
 
@@ -12,71 +13,91 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  // ✨ NOUVEAU : Stocker le token ET l'utilisateur
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('admin_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem('admin_token') || null;
-  });
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
-  // ✨ Login avec token JWT
-  const login = (userData, authToken) => {
-    setUser(userData);
-    setToken(authToken);
-    localStorage.setItem('admin_user', JSON.stringify(userData));
-    localStorage.setItem('admin_token', authToken);
-  };
-
-  // ✨ Logout amélioré
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('admin_user');
-    localStorage.removeItem('admin_token');
-  };
-
-  // ✨ Vérifier si le token est expiré (optionnel mais recommandé)
-  const isTokenValid = () => {
-    if (!token) return false;
-    
+  const checkAuth = async () => {
     try {
-      // Décoder le JWT (partie payload)
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const expirationTime = payload.exp * 1000; // Convertir en ms
-      
-      // Vérifier si expiré
-      if (Date.now() >= expirationTime) {
-        logout(); // Auto-logout si expiré
-        return false;
+      const response = await fetch(API_CONFIG.url('/admin/verify'), {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        setUser(null);
       }
-      
-      return true;
     } catch (error) {
-      console.error('Erreur validation token:', error);
-      return false;
+      console.error('Erreur vérification auth:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const isAuthenticated = () => {
-    return !!user && !!token && isTokenValid();
+  // ✅ Fonction login
+  const login = async (username, password) => {
+    try {
+      const response = await fetch(API_CONFIG.url('/admin/login'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur de connexion');
+      }
+
+      setUser(data.user);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Erreur login:', error);
+      return { success: false, error: error.message };
+    }
   };
 
-  // ✨ NOUVEAU : Helper pour récupérer le token
-  const getToken = () => token;
+  // ✅ Fonction logout
+  const logout = async () => {
+    try {
+      await fetch(API_CONFIG.url('/admin/logout'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('Erreur logout:', error);
+    } finally {
+      setUser(null);
+    }
+  };
+
+  const value = {
+    user,
+    loading,
+    login,
+    logout,
+    isAuthenticated: !!user
+  };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      token,
-      login, 
-      logout, 
-      isAuthenticated,
-      getToken,
-      isTokenValid
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

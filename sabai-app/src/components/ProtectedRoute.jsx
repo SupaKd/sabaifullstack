@@ -1,21 +1,30 @@
-// ===== src/components/ProtectedRoute.jsx =====
+// ===== src/components/ProtectedRoute.jsx ===== (VERSION CORRIGÉE)
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-/**
- * Composant pour protéger les routes admin
- * Redirige vers /admin/login si non authentifié
- */
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  
-  // Vérifier l'authentification
-  if (!isAuthenticated()) {
-    console.warn('⚠️ Accès refusé - Redirection vers login');
+  const { user, loading } = useAuth();
+
+  // Afficher un loader pendant la vérification
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        fontSize: '1.5rem'
+      }}>
+        <div>Chargement...</div>
+      </div>
+    );
+  }
+
+  // ✅ CORRECTION : user au lieu de isAuthenticated()
+  if (!user) {
     return <Navigate to="/admin/login" replace />;
   }
-  
-  // Utilisateur authentifié, afficher la page
+
   return children;
 };
 

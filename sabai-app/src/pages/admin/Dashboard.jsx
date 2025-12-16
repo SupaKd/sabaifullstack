@@ -1,385 +1,326 @@
-// ===== src/pages/admin/AdminDashboard.jsx ===== (AMÉLIORATIONS)
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import api from "../../services/api";
-import ws from "../../services/websocket";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// ===== src/pages/admin/Dashboard.jsx ===== (VERSION CORRIGÉE)
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faBowlFood,
-  faBoxOpen,
-  faSignOutAlt,
-  faCheck,
-  faTimes,
-  faTruck,
-  faShoppingBag,
-  faMapMarkerAlt,
-  faUser,
-  faPhone,
-  faCommentDots,
-  faClock,
+  faShoppingCart,
+  faEuroSign,
   faUtensils,
-  faMotorcycle,
-  faChevronRight,
-} from "@fortawesome/free-solid-svg-icons";
+  faClock,
+  faCheckCircle,
+  faTimesCircle,
+  faTruck,
+  faChartLine,
+  faBox
+} from '@fortawesome/free-solid-svg-icons';
+import toast from 'react-hot-toast';
+import api from '../../services/api';
 
 const AdminDashboard = () => {
-  const [orders, setOrders] = useState([]);
-  const [serviceEnabled, setServiceEnabled] = useState(true);
-  const [deliveryEnabled, setDeliveryEnabled] = useState(true);
+  const [stats, setStats] = useState({
+    todayOrders: 0,
+    todayRevenue: 0,
+    pendingOrders: 0,
+    totalProducts: 0,
+    activeProducts: 0
+  });
+
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [serviceStatus, setServiceStatus] = useState({
+    isOpen: false,
+    deliveryEnabled: false
+  });
   const [loading, setLoading] = useState(true);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
-    loadData();
-
-    ws.connect("admin");
-    ws.on("new_order", () => {
-      playSound();
-      loadData();
-    });
-
-    return () => {
-      try {
-        ws.disconnect();
-      } catch (e) {}
-    };
+    loadDashboardData();
   }, []);
 
-  const loadData = async () => {
+  const loadDashboardData = async () => {
     try {
-      setLoading(true);
-
-      // ✅ Utiliser api.js au lieu de fetch direct
-      const [ordersData, settingsData] = await Promise.all([
-        api.getAdminOrders(null),
-        api.getServiceHours(), 
+      await Promise.all([
+        loadStats(),
+        loadRecentOrders(),
+        loadServiceStatus()
       ]);
-
-      // ✅ Gérer la réponse correctement
-      if (ordersData.success !== undefined) {
-        setOrders(ordersData.data || ordersData);
-      } else {
-        setOrders(ordersData);
-      }
-
-      // ✅ Charger les settings via API
-      const settings = await api.getServiceSettings();
-
-      if (settings.success) {
-        setServiceEnabled(settings.data.service_enabled === "true");
-        setDeliveryEnabled(settings.data.delivery_enabled === "true");
-      }
-    } catch (err) {
-      console.error("Erreur chargement données:", err);
+    } catch (error) {
+      console.error('Erreur chargement dashboard:', error);
+      toast.error('Erreur lors du chargement du tableau de bord');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Utiliser api.js pour les toggles
+  // ✅ CORRIGÉ
+  const loadStats = async () => {
+    try {
+      const data = await api.getAdminStats();
+      setStats(data.data || {
+        todayOrders: 0,
+        todayRevenue: 0,
+        pendingOrders: 0,
+        totalProducts: 0,
+        activeProducts: 0
+      });
+    } catch (error) {
+      console.error('Erreur stats:', error);
+    }
+  };
+
+  // ✅ CORRIGÉ
+  const loadRecentOrders = async () => {
+    try {
+      const data = await api.getAdminOrders({ limit: 5 });
+      setRecentOrders(data.data || []);
+    } catch (error) {
+      console.error('Erreur commandes récentes:', error);
+    }
+  };
+
+  // ✅ CORRIGÉ
+  const loadServiceStatus = async () => {
+    try {
+      const data = await api.getServiceSettings();
+      const settings = data.data || {};
+      
+      setServiceStatus({
+        isOpen: settings.service_enabled === 'true',
+        deliveryEnabled: settings.delivery_enabled === 'true'
+      });
+    } catch (error) {
+      console.error('Erreur statut service:', error);
+    }
+  };
+
+  // ✅ CORRIGÉ : Toggle service
   const toggleService = async () => {
     try {
-      const newValue = !serviceEnabled;
-      await api.updateSetting("service_enabled", newValue ? "true" : "false");
-      setServiceEnabled(newValue);
-    } catch (err) {
-      console.error("Erreur toggle service:", err);
-      alert("Erreur lors de la mise à jour du service");
+      const newStatus = !serviceStatus.isOpen;
+      await api.updateServiceSetting('service_enabled', newStatus.toString());
+      
+      setServiceStatus(prev => ({
+        ...prev,
+        isOpen: newStatus
+      }));
+      
+      toast.success(newStatus ? 'Service activé ✓' : 'Service désactivé');
+    } catch (error) {
+      console.error('Erreur toggle service:', error);
+      toast.error('Erreur lors du changement de statut');
     }
   };
 
+  // ✅ CORRIGÉ : Toggle delivery
   const toggleDelivery = async () => {
     try {
-      const newValue = !deliveryEnabled;
-      await api.updateDeliveryEnabled(newValue);
-      setDeliveryEnabled(newValue);
-    } catch (err) {
-      console.error("Erreur toggle delivery:", err);
-      alert("Erreur lors de la mise à jour de la livraison");
+      const newStatus = !serviceStatus.deliveryEnabled;
+      await api.updateServiceSetting('delivery_enabled', newStatus.toString());
+      
+      setServiceStatus(prev => ({
+        ...prev,
+        deliveryEnabled: newStatus
+      }));
+      
+      toast.success(newStatus ? 'Livraison activée ✓' : 'Livraison désactivée');
+    } catch (error) {
+      console.error('Erreur toggle delivery:', error);
+      toast.error('Erreur lors du changement de statut livraison');
     }
   };
 
-  const updateStatus = async (orderId, status) => {
-    try {
-      await api.updateOrderStatus(orderId, status);
-      playSound();
-      loadData();
-    } catch (err) {
-      console.error("Erreur mise à jour statut:", err);
-      alert("Erreur lors de la mise à jour du statut");
-    }
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      pending: { label: 'En attente', class: 'status-pending' },
+      confirmed: { label: 'Confirmée', class: 'status-confirmed' },
+      preparing: { label: 'En préparation', class: 'status-preparing' },
+      ready: { label: 'Prête', class: 'status-ready' },
+      delivering: { label: 'En livraison', class: 'status-delivering' },
+      completed: { label: 'Terminée', class: 'status-completed' },
+      cancelled: { label: 'Annulée', class: 'status-cancelled' }
+    };
+
+    const config = statusConfig[status] || { label: status, class: 'status-pending' };
+    return <span className={`order-status ${config.class}`}>{config.label}</span>;
   };
 
-  const playSound = () => {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 800;
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.3);
-    } catch (err) {
-      console.log("Audio non disponible");
-    }
-  };
-
-  const sortedOrders = [...orders].sort((a, b) => b.id - a.id);
-  const activeOrders = orders.filter(
-    (o) => !["completed", "cancelled"].includes(o.status)
-  ).length;
-
-  if (loading) return <div className="loading">Chargement...</div>;
+  if (loading) {
+    return (
+      <div className="admin-loading">
+        <div className="spinner"></div>
+        <p>Chargement du tableau de bord...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="dashboard">
-      {/* HEADER */}
-      <div className="header">
-        <img src="/images/logosabai.png" alt="logo" className="logodash"/>
-
-        <div className="header-nav">
-          <a href="/admin/products">
-            <FontAwesomeIcon icon={faBowlFood} /> Produits
-          </a>
-
-          <a href="/admin/horaires">
-            <FontAwesomeIcon icon={faClock} /> Horaires
-          </a>
-        </div>
-
-        <div className="header-right">
-
-          <button
-            onClick={() => {
-              logout();
-              navigate("/admin/login");
-            }}
-            className="btn-logout"
-          >
-            <FontAwesomeIcon icon={faSignOutAlt} /> Déconnexion
-          </button>
-        </div>
-      </div>
-
-      {/* CONTROLES */}
-      <div className="controls">
-        {/* Service */}
-        <div className="control-card">
-          <div className="control-info">
-            <h3>Service</h3>
-
-            <div
-              className={`control-status ${
-                serviceEnabled ? "control-status--on" : "control-status--off"
-              }`}
-            >
-              {serviceEnabled ? (
-                <>
-                  <FontAwesomeIcon icon={faCheck} /> Ouvert
-                </>
-              ) : (
-                <>
-                  <FontAwesomeIcon icon={faTimes} /> Fermé
-                </>
-              )}
+    <div className="admin-dashboard">
+      {/* Header avec statut du service */}
+      <div className="dashboard-header">
+        <div className="header-content">
+          <h1>Tableau de bord</h1>
+          <div className="service-controls">
+            <div className="service-toggle">
+              <button
+                onClick={toggleService}
+                className={`toggle-btn ${serviceStatus.isOpen ? 'active' : ''}`}
+              >
+                <FontAwesomeIcon
+                  icon={serviceStatus.isOpen ? faCheckCircle : faTimesCircle}
+                />
+                <span>Service {serviceStatus.isOpen ? 'Ouvert' : 'Fermé'}</span>
+              </button>
             </div>
-          </div>
 
-          <div
-            className={`toggle ${serviceEnabled ? "active" : ""}`}
-            onClick={toggleService}
-          ></div>
-        </div>
-
-        {/* Livraison */}
-        <div className="control-card">
-          <div className="control-info">
-            <h3>Livraison</h3>
-
-            <div
-              className={`control-status ${
-                deliveryEnabled ? "control-status--on" : "control-status--off"
-              }`}
-            >
-              {deliveryEnabled ? (
-                <>
-                  <FontAwesomeIcon icon={faCheck} /> Activée
-                </>
-              ) : (
-                <>
-                  <FontAwesomeIcon icon={faTimes} /> Désactivée
-                </>
-              )}
+            <div className="service-toggle">
+              <button
+                onClick={toggleDelivery}
+                className={`toggle-btn ${serviceStatus.deliveryEnabled ? 'active' : ''}`}
+                disabled={!serviceStatus.isOpen}
+              >
+                <FontAwesomeIcon icon={faTruck} />
+                <span>Livraison {serviceStatus.deliveryEnabled ? 'Active' : 'Inactive'}</span>
+              </button>
             </div>
-          </div>
-
-          <div
-            className={`toggle ${deliveryEnabled ? "active" : ""}`}
-            onClick={toggleDelivery}
-            style={{
-              opacity: serviceEnabled ? 1 : 0.5,
-              cursor: serviceEnabled ? "pointer" : "not-allowed",
-            }}
-          ></div>
-        </div>
-
-        {/* En cours */}
-        <div className="control-card control-card--count">
-          <div className="control-info">
-            <h3>En cours</h3>
-            <div className="control-status">{activeOrders}</div>
           </div>
         </div>
       </div>
 
-      {/* COMMANDES */}
-      <div className="orders-section">
-        <div className="orders-header">
-          <h2>
-            <FontAwesomeIcon icon={faBoxOpen} /> Commandes récentes (
-            {orders.length})
-          </h2>
+      {/* Stats Cards */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon orders">
+            <FontAwesomeIcon icon={faShoppingCart} />
+          </div>
+          <div className="stat-content">
+            <h3>Commandes aujourd'hui</h3>
+            <p className="stat-value">{stats.todayOrders}</p>
+          </div>
         </div>
 
-        <div className="orders">
-          {sortedOrders.length === 0 ? (
-            <div className="empty">
-              <div className="empty-icon">
-                <FontAwesomeIcon icon={faBoxOpen} />
-              </div>
-              <p>Aucune commande</p>
-            </div>
-          ) : (
-            sortedOrders.slice(0, 10).map(
-              (
-                order // ← Limiter à 10 pour dashboard
-              ) => (
-                <div key={order.id} className={`order order--${order.status}`}>
-                  {/* HEADER commande */}
-                  <div className="order-header">
-                    <div className="order-main">
-                      <span className="order-id">
-                        <FontAwesomeIcon icon={faChevronRight} /> #{order.id}
-                      </span>
+        <div className="stat-card">
+          <div className="stat-icon revenue">
+            <FontAwesomeIcon icon={faEuroSign} />
+          </div>
+          <div className="stat-content">
+            <h3>Chiffre d'affaires</h3>
+            <p className="stat-value">{parseFloat(stats.todayRevenue || 0).toFixed(2)} €</p>
+          </div>
+        </div>
 
-                      <span
-                        className={`order-type ${
-                          order.order_type === "takeaway"
-                            ? "order-type--takeaway"
-                            : "order-type--delivery"
-                        }`}
-                      >
-                        {order.order_type === "takeaway" ? (
-                          <>
-                            <FontAwesomeIcon icon={faShoppingBag} /> À emporter
-                          </>
-                        ) : (
+        <div className="stat-card">
+          <div className="stat-icon pending">
+            <FontAwesomeIcon icon={faClock} />
+          </div>
+          <div className="stat-content">
+            <h3>Commandes en attente</h3>
+            <p className="stat-value">{stats.pendingOrders}</p>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon products">
+            <FontAwesomeIcon icon={faUtensils} />
+          </div>
+          <div className="stat-content">
+            <h3>Produits actifs</h3>
+            <p className="stat-value">
+              {stats.activeProducts} / {stats.totalProducts}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="quick-actions">
+        <h2>Actions rapides</h2>
+        <div className="actions-grid">
+          <Link to="/admin/orders" className="action-card">
+            <FontAwesomeIcon icon={faShoppingCart} />
+            <span>Gérer les commandes</span>
+          </Link>
+
+          <Link to="/admin/products" className="action-card">
+            <FontAwesomeIcon icon={faBox} />
+            <span>Gérer les produits</span>
+          </Link>
+
+          <Link to="/admin/horaires" className="action-card">
+            <FontAwesomeIcon icon={faClock} />
+            <span>Gérer les horaires</span>
+          </Link>
+
+          <Link to="/admin/stats" className="action-card">
+            <FontAwesomeIcon icon={faChartLine} />
+            <span>Voir les statistiques</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Recent Orders */}
+      <div className="recent-orders">
+        <div className="section-header">
+          <h2>Commandes récentes</h2>
+          <Link to="/admin/orders" className="view-all-link">
+            Voir tout →
+          </Link>
+        </div>
+
+        {recentOrders.length === 0 ? (
+          <div className="empty-state">
+            <FontAwesomeIcon icon={faShoppingCart} />
+            <p>Aucune commande récente</p>
+          </div>
+        ) : (
+          <div className="orders-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>N° Commande</th>
+                  <th>Client</th>
+                  <th>Type</th>
+                  <th>Montant</th>
+                  <th>Statut</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentOrders.map((order) => (
+                  <tr key={order.id}>
+                    <td>
+                      <Link to={`/admin/orders/${order.id}`} className="order-link">
+                        #{order.id}
+                      </Link>
+                    </td>
+                    <td>{order.customer_name || 'Client'}</td>
+                    <td>
+                      <span className={`order-type ${order.order_type}`}>
+                        {order.order_type === 'delivery' ? (
                           <>
                             <FontAwesomeIcon icon={faTruck} /> Livraison
                           </>
+                        ) : (
+                          <>
+                            <FontAwesomeIcon icon={faUtensils} /> Sur place
+                          </>
                         )}
                       </span>
-                    </div>
-
-                    {order.delivery_time && (
-                      <div className="order-time">
-                        <FontAwesomeIcon icon={faClock} />{" "}
-                        {order.delivery_time.slice(0, 5)}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* BODY commande */}
-                  <div className="order-body">
-                    <div className="order-client">
-                      <div className="client-name">
-                        <FontAwesomeIcon icon={faUser} /> {order.customer_name}
-                      </div>
-
-                      <div className="client-phone">
-                        <FontAwesomeIcon icon={faPhone} />{" "}
-                        {order.customer_phone}
-                      </div>
-
-                      {order.order_type === "delivery" &&
-                        order.delivery_address && (
-                          <div className="client-address">
-                            <FontAwesomeIcon icon={faMapMarkerAlt} />{" "}
-                            {order.delivery_address}
-                          </div>
-                        )}
-                    </div>
-
-                    {order.notes && (
-                      <div className="order-notes">
-                        <strong>
-                          <FontAwesomeIcon icon={faCommentDots} /> Note :
-                        </strong>{" "}
-                        {order.notes}
-                      </div>
-                    )}
-
-                    <div className="order-items">{order.items}</div>
-                  </div>
-
-                  {/* FOOTER commande */}
-                  <div className="order-footer">
-                    <div className="order-total">
-                      {parseFloat(order.total_amount).toFixed(2)} €
-                    </div>
-
-                    <div className="order-actions">
-                      {order.status === "pending" && (
-                        <button
-                          onClick={() => updateStatus(order.id, "confirmed")}
-                          className="order-btn"
-                        >
-                          <FontAwesomeIcon icon={faCheck} /> Accepter
-                        </button>
-                      )}
-
-                      {order.status === "confirmed" && (
-                        <button
-                          onClick={() => updateStatus(order.id, "preparing")}
-                          className="order-btn"
-                        >
-                          <FontAwesomeIcon icon={faUtensils} /> Préparer
-                        </button>
-                      )}
-
-                      {order.status === "preparing" &&
-                        order.order_type === "delivery" && (
-                          <button
-                            onClick={() => updateStatus(order.id, "delivering")}
-                            className="order-btn"
-                          >
-                            <FontAwesomeIcon icon={faMotorcycle} /> Livrer
-                          </button>
-                        )}
-
-                      {(order.status === "delivering" ||
-                        (order.status === "preparing" &&
-                          order.order_type === "takeaway")) && (
-                        <button
-                          onClick={() => updateStatus(order.id, "completed")}
-                          className="order-btn"
-                        >
-                          <FontAwesomeIcon icon={faCheck} /> Terminée
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            )
-          )}
-        </div>
+                    </td>
+                    <td className="amount">{parseFloat(order.total_amount || 0).toFixed(2)} €</td>
+                    <td>{getStatusBadge(order.status)}</td>
+                    <td>
+                      {new Date(order.created_at).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

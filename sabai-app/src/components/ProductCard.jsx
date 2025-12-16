@@ -1,27 +1,25 @@
-// ===== src/components/ProductCard.jsx =====
+// ===== src/components/ProductCard.jsx ===== (VERSION OPTIMISÉE)
 import { useCart } from "../context/CartContext";
 import { useServiceStatus } from "../context/ServiceStatusContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faClock } from "@fortawesome/free-solid-svg-icons";
-import API_CONFIG from '../services/api.config';
+import OptimizedImage from "./OptimizedImage";
+import toast from "react-hot-toast";
 
-// Notifications
 import {
   notifyAddToCart,
   notifyOutOfStock,
-  notifyLowStock,
 } from "../utils/notify";
-import toast from "react-hot-toast";
 
 const ProductCard = ({ product }) => {
   const { addItem, items } = useCart();
-  const { serviceStatus, isOpen } = useServiceStatus();
+  const { serviceStatus } = useServiceStatus();
 
   const price = parseFloat(product.price);
   const stock = parseInt(product.stock_quantity || product.stock || 0);
-  const isServiceOpen = serviceStatus?.open ?? true; // Par défaut ouvert si pas de statut
+  const isServiceOpen = serviceStatus?.open ?? true;
 
-  // Calculer la quantité déjà dans le panier pour ce produit
+  // Calculer la quantité déjà dans le panier
   const getQuantityInCart = () => {
     const cartItem = items.find(item => item.product?.id === product.id);
     return cartItem ? cartItem.quantity : 0;
@@ -76,7 +74,6 @@ const ProductCard = ({ product }) => {
     if (remainingStock > 0) {
       notifyAddToCart(product.name);
     } else {
-      // Si c'était le dernier en stock
       toast.success(`${product.name} ajouté - C'était le dernier !`, {
         duration: 3000,
         icon: '✅'
@@ -155,12 +152,13 @@ const ProductCard = ({ product }) => {
         )}
       </div>
 
+      {/* ✅ IMAGE OPTIMISÉE */}
       {product.image_url && (
-       <img
-       src={API_CONFIG.imageUrl(product.image_url)} 
-       alt={product.name}
-       className="product-card__image"
-     />
+        <OptimizedImage
+          src={product.image_url}
+          alt={product.name}
+          className="product-card__image"
+        />
       )}
     </div>
   );

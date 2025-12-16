@@ -1,244 +1,117 @@
-// admin-login.scss
-// Desktop-first SCSS (no variables) — style for a professional CRM login card
+/* ===== src/styles/Login.scss ===== */
+/* Mobile-first, sans variables */
 
-.admin-login {
+.login-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #f5f7fa 0%, #ffffff 100%);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, "Noto Sans", "Liberation Sans", sans-serif;
-  color: #222222;
-  padding: 40px;
+  background: #f4f6f8;
+  padding: 16px;
+}
 
-  &__card {
-    width: 520px;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(34, 34, 34, 0.08);
-    overflow: hidden;
-    border: 1px solid rgba(34, 34, 34, 0.04);
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    padding: 28px;
+.login-container {
+  width: 100%;
+  max-width: 360px;
+}
+
+.login-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.login-title {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 4px;
+  color: #111827;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 24px;
+  color: #6b7280;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-group input {
+  height: 44px;
+  padding: 0 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.form-group input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.login-button {
+  margin-top: 8px;
+  height: 46px;
+  border-radius: 10px;
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.login-button:hover:not(:disabled) {
+  background: #1e40af;
+}
+
+.login-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.login-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* ===== Tablet et + ===== */
+@media (min-width: 768px) {
+  .login-card {
+    padding: 32px 28px;
   }
 
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding-bottom: 6px;
-    border-bottom: 1px dashed rgba(34, 34, 34, 0.04);
-
-    & .admin-login__icon {
-      width: 48px;
-      height: 48px;
-      object-fit: contain;
-      border-radius: 8px;
-      background: transparent;
-      display: block;
-    }
-
-    & h1,
-    & h2 {
-      margin: 0;
-      line-height: 1;
-      color: #111827;
-      font-weight: 600;
-      font-size: 18px;
-    }
-
-    & p {
-      margin: 0;
-      color: #6b7280;
-      font-size: 13px;
-    }
+  .login-title {
+    font-size: 24px;
   }
 
-  .error {
-    background: #fff5f5;
-    color: #9b1c1c;
-    border: 1px solid rgba(153, 27, 27, 0.08);
-    padding: 12px 14px;
-    border-radius: 8px;
-    font-size: 14px;
-  }
-
-  &__form {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding-top: 6px;
-  }
-
-  .form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    &__label {
-      font-size: 13px;
-      color: #374151;
-      font-weight: 500;
-    }
-
-    &__input {
-      height: 44px;
-      padding: 0 12px;
-      border-radius: 8px;
-      border: 1px solid rgba(15, 23, 42, 0.06);
-      background: #ffffff;
-      font-size: 15px;
-      color: #0f172a;
-      outline: none;
-      transition: box-shadow 180ms ease, border-color 180ms ease;
-      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02), inset 0 0 0 rgba(0,0,0,0);
-
-      &::placeholder {
-        color: #9ca3af;
-      }
-
-      &:hover {
-        border-color: rgba(15, 23, 42, 0.12);
-      }
-
-      &:focus {
-        border-color: #2563eb;
-        box-shadow: 0 6px 24px rgba(37, 99, 235, 0.06);
-      }
-
-      &:disabled {
-        background: #f9fafb;
-        color: #9ca3af;
-        cursor: not-allowed;
-      }
-    }
-  }
-
-  // Button variants
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    height: 48px;
-    padding: 0 18px;
-    border-radius: 10px;
-    font-weight: 600;
+  .login-subtitle {
     font-size: 15px;
-    cursor: pointer;
-    border: none;
-    transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
-    user-select: none;
-
-    &--primary {
-      background: linear-gradient(180deg, #0f172a, #0b1220);
-      color: #ffffff;
-      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
-    }
-
-    &--large {
-      height: 52px;
-      font-size: 16px;
-      border-radius: 12px;
-    }
-
-    &--full-width {
-      width: 100%;
-    }
-
-    &:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-    }
-
-    &:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      box-shadow: none;
-      transform: none;
-    }
-  }
-
-  &__hint {
-    margin: 6px 0 0 0;
-    color: #6b7280;
-    font-size: 13px;
-    background: rgba(14, 165, 233, 0.03);
-    padding: 10px 12px;
-    border-radius: 8px;
-    display: block;
-    line-height: 1.2;
-
-    strong {
-      color: #0f172a;
-      font-weight: 600;
-    }
-  }
-}
-
-/* ----- Smaller viewports (tablet -> mobile) ----- */
-/* Tablet */
-@media (max-width: 900px) {
-  .admin-login {
-    padding: 28px;
-
-    &__card {
-      width: 420px;
-      padding: 22px;
-      border-radius: 10px;
-    }
-  }
-}
-
-/* Mobile */
-@media (max-width: 520px) {
-  .admin-login {
-    padding: 18px;
-    background: #f7f8fb;
-
-    &__card {
-      width: 100%;
-      padding: 18px;
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(34, 34, 34, 0.06);
-    }
-
-    &__header {
-      gap: 12px;
-
-      & .admin-login__icon {
-        width: 40px;
-        height: 40px;
-      }
-    }
-
-    .form-field__input {
-      height: 46px;
-    }
-
-    .btn {
-      height: 50px;
-      font-size: 15px;
-    }
-
-    &__hint {
-      font-size: 12px;
-      padding: 8px 10px;
-    }
-  }
-}
-
-/* High-contrast / reduced-motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  .admin-login .btn,
-  .form-field__input {
-    transition: none !important;
   }
 }

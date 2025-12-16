@@ -1,5 +1,5 @@
-// ===== src/context/CartContext.jsx =====
-import { createContext, useContext, useState, useEffect } from 'react';
+// ===== src/context/CartContext.jsx ===== (VERSION OPTIMISÉE)
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import toast from 'react-hot-toast';
 
 const CartContext = createContext();
@@ -22,7 +22,8 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
-  const addItem = (product, quantity = 1) => {
+  // ✅ OPTIMISATION : Mémoriser addItem avec useCallback
+  const addItem = useCallback((product, quantity = 1) => {
     if (!product || !product.id) {
       console.error('Produit invalide:', product);
       return false;
@@ -74,13 +75,15 @@ export const CartProvider = ({ children }) => {
     });
 
     return true;
-  };
+  }, []);
 
-  const removeItem = (productId) => {
+  // ✅ OPTIMISATION : Mémoriser removeItem
+  const removeItem = useCallback((productId) => {
     setItems(prev => prev.filter(item => item.product?.id !== productId));
-  };
+  }, []);
 
-  const updateQuantity = (productId, quantity) => {
+  // ✅ OPTIMISATION : Mémoriser updateQuantity
+  const updateQuantity = useCallback((productId, quantity) => {
     const qty = parseInt(quantity);
     
     if (qty <= 0) {
@@ -109,43 +112,49 @@ export const CartProvider = ({ children }) => {
           : item
       );
     });
-  };
+  }, [removeItem]);
 
-  const clearCart = () => {
+  // ✅ OPTIMISATION : Mémoriser clearCart
+  const clearCart = useCallback(() => {
     setItems([]);
     localStorage.removeItem('cart');
-  };
+  }, []);
 
-  const getTotal = () => {
+  // ✅ OPTIMISATION : Calculer le total avec useMemo
+  const total = useMemo(() => {
     return items.reduce((sum, item) => {
       if (!item.product || !item.product.price) return sum;
       const price = parseFloat(item.product.price);
       const quantity = parseInt(item.quantity);
       return sum + (price * quantity);
     }, 0);
-  };
+  }, [items]);
 
-  const getItemCount = () => {
+  // ✅ OPTIMISATION : Calculer le nombre d'items avec useMemo
+  const itemCount = useMemo(() => {
     return items.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0);
-  };
+  }, [items]);
 
-  // Obtenir la quantité d'un produit spécifique dans le panier
-  const getProductQuantity = (productId) => {
+  // ✅ OPTIMISATION : Mémoriser getProductQuantity
+  const getProductQuantity = useCallback((productId) => {
     const item = items.find(item => item.product?.id === productId);
     return item ? parseInt(item.quantity) : 0;
-  };
+  }, [items]);
+
+  // ✅ OPTIMISATION : Mémoriser la valeur du contexte
+  const value = useMemo(() => ({
+    items,
+    addItem,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    getTotal: () => total,
+    getItemCount: () => itemCount,
+    getProductQuantity
+  }), [items, addItem, removeItem, updateQuantity, clearCart, total, itemCount, getProductQuantity]);
 
   return (
-    <CartContext.Provider value={{
-      items,
-      addItem,
-      removeItem,
-      updateQuantity,
-      clearCart,
-      getTotal,
-      getItemCount,
-      getProductQuantity
-    }}>
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );

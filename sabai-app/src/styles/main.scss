@@ -1,3 +1,5 @@
+// ===== src/styles/main.scss ===== (VERSION MISE À JOUR)
+
 // Variables et mixins
 @import 'base/variables';
 @import 'base/mixins';
@@ -10,9 +12,11 @@
 @import 'components/cart-item';
 @import 'components/footer';
 @import 'components/hero';
+@import 'components/optimized-image';    
+@import 'components/error-boundary';     
+@import 'components/not';
 
-
-// Pages
+// Pages Client
 @import 'client/home';
 @import 'client/cart';
 @import 'client/checkout';
@@ -20,12 +24,9 @@
 @import 'client/checkoutsuccess';
 @import 'client/cgv';
 
-// Admin Page Specific Styles
+// Pages Admin
 @import 'restaurateur/login';
 @import 'restaurateur/admin';
 @import 'restaurateur/orders';
 @import 'restaurateur/product';
 @import 'restaurateur/horaire';
-
-// Not Found Page
-@import 'components/not';

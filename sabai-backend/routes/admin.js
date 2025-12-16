@@ -1,4 +1,4 @@
-// ===== routes/admin.js ===== (VERSION AMÉLIORÉE)
+// ===== routes/admin.js ===== (VERSION SÉCURISÉE - COOKIES httpOnly)
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
@@ -9,10 +9,10 @@ const { validateProductStock, validateOrderStatus } = require('../middleware/val
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'votre_secret_jwt_a_changer';
-const JWT_EXPIRES_IN = '24h'; // Token valide 24h
+const JWT_EXPIRES_IN = '8h'; // Token valide 8 heures
 
 /* =====================================================
-   ADMIN LOGIN - Génère un JWT
+   ADMIN LOGIN - Génère un JWT et le stocke dans un cookie httpOnly
 ===================================================== */
 router.post('/login', async (req, res, next) => {
   try {
@@ -51,7 +51,7 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
-    // ✨ NOUVEAU : Génération du JWT
+    // Génération du JWT
     const token = jwt.sign(
       { 
         id: users[0].id, 
@@ -62,23 +62,31 @@ router.post('/login', async (req, res, next) => {
       { expiresIn: JWT_EXPIRES_IN }
     );
 
+    // ✅ NOUVEAU : Stocker le token dans un cookie httpOnly
+    res.cookie('admin_token', token, {
+      httpOnly: true,                                  // ← Inaccessible en JavaScript
+      secure: process.env.NODE_ENV === 'production',   // ← HTTPS only en production
+      sameSite: 'strict',                              // ← Protection CSRF
+      maxAge: 8 * 60 * 60 * 1000                       // ← 8 heures en millisecondes
+    });
+
     // Mise à jour last_login
     await pool.query(
       'UPDATE admin_users SET last_login = NOW() WHERE id = ?',
       [users[0].id]
     );
 
-    console.log(`✓ Connexion réussie pour ${username}`);
+    console.log(`✓ Connexion réussie pour ${username} (cookie httpOnly)`);
 
+    // ✅ NE PLUS envoyer le token dans le JSON
     res.json({
       success: true,
       message: 'Connexion réussie',
-      token: token, // ✨ Token JWT à stocker côté client
       user: { 
         id: users[0].id, 
         username: users[0].username 
-      },
-      expiresIn: JWT_EXPIRES_IN
+      }
+      // ❌ token: token  ← SUPPRIMÉ (token maintenant dans cookie)
     });
 
   } catch (error) {
@@ -87,9 +95,18 @@ router.post('/login', async (req, res, next) => {
 });
 
 /* =====================================================
-   ADMIN LOGOUT - Optionnel (côté client supprime le token)
+   ADMIN LOGOUT - Supprime le cookie
 ===================================================== */
 router.post('/logout', authenticateToken, (req, res) => {
+  // ✅ Supprimer le cookie
+  res.clearCookie('admin_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
+  
+  console.log(`✓ Déconnexion admin ${req.user.username}`);
+  
   res.json({
     success: true,
     message: 'Déconnexion réussie'
@@ -218,7 +235,7 @@ router.patch('/orders/:id/status', authenticateToken, requireAdmin, validateOrde
       status
     );
 
-    // ✨ Notification WebSocket
+    // Notification WebSocket
     const { notifyClient } = require('../config/websocket');
     notifyClient(parseInt(id), 'order_status_updated', {
       order_id: parseInt(id),

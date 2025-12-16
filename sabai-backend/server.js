@@ -1,8 +1,9 @@
-// ===== server.js ===== (VERSION CORRIGÉE)
+// ===== server.js ===== (VERSION SÉCURISÉE - COOKIES httpOnly)
 
 // Import des modules principaux
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser'); // ✅ NOUVEAU
 const path = require('path');
 const http = require('http');
 require('dotenv').config();
@@ -23,7 +24,10 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const app = express();
 const server = http.createServer(app);
 
-// Middlewares globaux - CORS CORRIGÉ
+// ✅ NOUVEAU : Cookie parser (AVANT cors et express.json)
+app.use(cookieParser());
+
+// Middlewares globaux - CORS avec credentials
 app.use(cors({
   origin: [
     'https://white-lark-930387.hostingersite.com',
@@ -32,7 +36,7 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:3000'
   ],
-  credentials: true,
+  credentials: true, // ✅ IMPORTANT : Permet l'envoi de cookies
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -103,6 +107,7 @@ initDB()
       console.log(`✓ Health check: http://localhost:${PORT}/health`);
       console.log(`✓ Gestion des heures: http://localhost:${PORT}/api/service-hours`);
       console.log(`✓ Paiement Stripe: http://localhost:${PORT}/api/payment`); 
+      console.log(`✓ 🔒 Auth avec cookies httpOnly activée`); // ✅ NOUVEAU
       console.log('================================');
     });
   })
