@@ -1,6 +1,21 @@
-// ===== src/pages/admin/Products.jsx ===== (VERSION CORRIGÉE - ORDRE FIXÉ)
+// ===== src/pages/admin/Products.jsx ===== (OPTIMISÉ TABLETTE)
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faArrowLeft,
+  faImage,
+  faEdit,
+  faCheck,
+  faTimes,
+  faBell,
+  faBox,
+  faExclamationTriangle,
+  faToggleOn,
+  faToggleOff,
+  faTrash
+} from '@fortawesome/free-solid-svg-icons';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
 import API_CONFIG from '../../services/api.config';
 import useAdminNotifications from '../../hooks/useAdminNotifications';
@@ -11,9 +26,8 @@ const AdminProducts = () => {
   const [editingStock, setEditingStock] = useState(null);
   const [newStock, setNewStock] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [stockFilter, setStockFilter] = useState('all');
+  const [deletingProduct, setDeletingProduct] = useState(null);
 
-  // ✅ IMPORTANT : Déclarer loadProducts AVANT le hook
   const loadProducts = async () => {
     try {
       setLoading(true);
@@ -29,15 +43,14 @@ const AdminProducts = () => {
     } catch (err) {
       console.error('Erreur chargement produits:', err);
       setProducts([]);
+      toast.error('Erreur de chargement');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Hook appelé APRÈS la déclaration de loadProducts
   const { isConnected } = useAdminNotifications(loadProducts);
 
-  // ✅ useEffect vient après
   useEffect(() => {
     loadProducts();
   }, []);
@@ -47,30 +60,75 @@ const AdminProducts = () => {
       await api.updateProductStock(productId, parseInt(newStock));
       setEditingStock(null);
       setNewStock('');
+      
+      toast.success('✓ Stock mis à jour', {
+        duration: 2000,
+        style: { fontSize: '18px', padding: '16px 24px' }
+      });
+      
       loadProducts();
-      alert('Stock mis à jour !');
     } catch (err) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur de mise à jour');
     }
   };
 
   const handleImageUpload = async (productId, file) => {
+    if (!file) return;
+    
     try {
       await api.uploadProductImage(productId, file);
+      toast.success('✓ Image uploadée', {
+        duration: 2000,
+        style: { fontSize: '18px', padding: '16px 24px' }
+      });
       loadProducts();
-      alert('Image uploadée !');
     } catch (err) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur upload image');
     }
   };
 
   const handleAvailabilityToggle = async (productId, newAvailability) => {
     try {
       await api.updateProductAvailability(productId, newAvailability);
+      toast.success(newAvailability ? '✓ Produit disponible' : 'Produit indisponible', {
+        duration: 2000,
+        style: { fontSize: '18px', padding: '16px 24px' }
+      });
       loadProducts();
     } catch (err) {
-      console.error('Erreur disponibilité:', err);
-      alert('Erreur lors de la mise à jour');
+      toast.error('Erreur');
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    if (deletingProduct === productId) {
+      // Confirmation : supprimer définitivement
+      try {
+        await api.deleteProduct(productId);
+        toast.success('✓ Produit supprimé', {
+          duration: 2000,
+          style: { fontSize: '18px', padding: '16px 24px' }
+        });
+        setDeletingProduct(null);
+        loadProducts();
+      } catch (err) {
+        console.error('Erreur suppression:', err);
+        toast.error('Erreur de suppression');
+        setDeletingProduct(null);
+      }
+    } else {
+      // Premier clic : demander confirmation
+      setDeletingProduct(productId);
+      toast('Cliquez à nouveau pour confirmer', {
+        icon: '⚠️',
+        duration: 3000,
+        style: { fontSize: '16px', padding: '12px 20px' }
+      });
+      
+      // Reset après 3 secondes
+      setTimeout(() => {
+        setDeletingProduct(null);
+      }, 3000);
     }
   };
 
@@ -79,20 +137,32 @@ const AdminProducts = () => {
     setNewStock(product.stock.toString());
   };
 
-  const getStockClass = (stock) => {
+  const getStockConfig = (stock) => {
     const stockNum = parseInt(stock);
-    if (stockNum === 0) return 'product-admin-card__stock--out';
-    if (stockNum < 10) return 'product-admin-card__stock--low';
-    if (stockNum < 20) return 'product-admin-card__stock--medium';
-    return 'product-admin-card__stock--good';
-  };
-
-  const getStockLabel = (stock) => {
-    const stockNum = parseInt(stock);
-    if (stockNum === 0) return 'Rupture';
-    if (stockNum < 10) return 'Stock faible';
-    if (stockNum < 20) return 'Stock moyen';
-    return 'Stock OK';
+    if (stockNum === 0) return { 
+      color: '#dc3545', 
+      bgColor: '#f8d7da', 
+      label: 'RUPTURE',
+      icon: faExclamationTriangle
+    };
+    if (stockNum < 10) return { 
+      color: '#ffc107', 
+      bgColor: '#fff8e1', 
+      label: 'FAIBLE',
+      icon: faExclamationTriangle
+    };
+    if (stockNum < 20) return { 
+      color: '#17a2b8', 
+      bgColor: '#d1ecf1', 
+      label: 'MOYEN',
+      icon: faBox
+    };
+    return { 
+      color: '#28a745', 
+      bgColor: '#d4edda', 
+      label: 'OK',
+      icon: faBox
+    };
   };
 
   const categories = [...new Set(products.map(p => p.category))];
@@ -105,225 +175,204 @@ const AdminProducts = () => {
   };
 
   const filteredProducts = products.filter(product => {
-    const matchCategory = categoryFilter === 'all' || product.category === categoryFilter;
-    const matchStock = 
-      stockFilter === 'all' ||
-      (stockFilter === 'low' && product.stock < 10 && product.stock > 0) ||
-      (stockFilter === 'out' && product.stock === 0) ||
-      (stockFilter === 'ok' && product.stock >= 10);
-    
-    return matchCategory && matchStock;
+    return categoryFilter === 'all' || product.category === categoryFilter;
   });
 
   return (
-    <div className="admin-products">
-      {/* Header avec retour et indicateur de connexion */}
-      <div className="admin-products__header">
-        <div className="admin-products__header-left">
-          <Link to="/admin" className="btn-back">
-            ← Retour
-          </Link>
-          <h1 className="admin-products__title">Gestion des produits</h1>
-          
-          {/* Indicateur de connexion */}
+    <div className="admin-products-tablet">
+      {/* Header */}
+      <div className="products-header-tablet">
+        <Link to="/admin" className="back-btn-tablet">
+          <FontAwesomeIcon icon={faArrowLeft} />
+        </Link>
+        
+        <h1>Produits</h1>
+        
+        <div className="header-badges">
           {isConnected && (
-            <span className="connection-badge connection-badge--active">
-              🔔 Alertes stock actives
+            <span className="ws-badge connected">
+              <FontAwesomeIcon icon={faBell} />
             </span>
           )}
+          <span className="count-badge">{products.length}</span>
         </div>
       </div>
 
-      {/* Statistiques rapides */}
-      <div className="products-stats">
-        <div className="stat-mini">
-          <span className="stat-mini__value">{stockStats.total}</span>
-          <span className="stat-mini__label">Produits</span>
+      {/* Stats rapides */}
+      <div className="products-stats-tablet">
+        <div className="stat-card-mini">
+          <div className="stat-value">{stockStats.total}</div>
+          <div className="stat-label">Produits</div>
         </div>
-        <div className="stat-mini stat-mini--warning">
-          <span className="stat-mini__value">{stockStats.lowStock}</span>
-          <span className="stat-mini__label">Stock faible</span>
+        <div className="stat-card-mini warning">
+          <div className="stat-value">{stockStats.lowStock}</div>
+          <div className="stat-label">Faible</div>
         </div>
-        <div className="stat-mini stat-mini--danger">
-          <span className="stat-mini__value">{stockStats.outOfStock}</span>
-          <span className="stat-mini__label">Rupture</span>
+        <div className="stat-card-mini danger">
+          <div className="stat-value">{stockStats.outOfStock}</div>
+          <div className="stat-label">Rupture</div>
         </div>
-        <div className="stat-mini stat-mini--success">
-          <span className="stat-mini__value">{stockStats.available}</span>
-          <span className="stat-mini__label">Disponibles</span>
-        </div>
-      </div>
-
-      {/* Filtres */}
-      <div className="filters-container">
-        <div className="filter-group">
-          <h3 className="filter-group__title">🏷️ Catégorie</h3>
-          <div className="filter-buttons">
-            <button 
-              onClick={() => setCategoryFilter('all')}
-              className={`filter-btn ${categoryFilter === 'all' ? 'filter-btn--active' : ''}`}
-            >
-              Toutes
-            </button>
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setCategoryFilter(cat)}
-                className={`filter-btn ${categoryFilter === cat ? 'filter-btn--active' : ''}`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="filter-group">
-          <h3 className="filter-group__title">📊 État du stock</h3>
-          <div className="filter-buttons">
-            <button 
-              onClick={() => setStockFilter('all')}
-              className={`filter-btn ${stockFilter === 'all' ? 'filter-btn--active' : ''}`}
-            >
-              Tous
-            </button>
-            <button 
-              onClick={() => setStockFilter('low')}
-              className={`filter-btn filter-btn--warning ${stockFilter === 'low' ? 'filter-btn--active' : ''}`}
-            >
-              Stock faible ({stockStats.lowStock})
-            </button>
-            <button 
-              onClick={() => setStockFilter('out')}
-              className={`filter-btn filter-btn--danger ${stockFilter === 'out' ? 'filter-btn--active' : ''}`}
-            >
-              Rupture ({stockStats.outOfStock})
-            </button>
-            <button 
-              onClick={() => setStockFilter('ok')}
-              className={`filter-btn filter-btn--success ${stockFilter === 'ok' ? 'filter-btn--active' : ''}`}
-            >
-              Stock OK
-            </button>
-          </div>
+        <div className="stat-card-mini success">
+          <div className="stat-value">{stockStats.available}</div>
+          <div className="stat-label">Dispo</div>
         </div>
       </div>
 
+      {/* Filtres catégories */}
+      <div className="category-filters-tablet">
+        <button
+          onClick={() => setCategoryFilter('all')}
+          className={`category-btn ${categoryFilter === 'all' ? 'active' : ''}`}
+        >
+          Toutes
+        </button>
+        {categories.map(cat => (
+          <button
+            key={cat}
+            onClick={() => setCategoryFilter(cat)}
+            className={`category-btn ${categoryFilter === cat ? 'active' : ''}`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Liste des produits */}
       {loading ? (
-        <div className="loading">Chargement...</div>
+        <div className="loading-tablet">
+          <div className="spinner"></div>
+          <p>Chargement...</p>
+        </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state__icon">🍜</div>
-          <h3 className="empty-state__title">Aucun produit trouvé</h3>
-          <p className="empty-state__text">Aucun produit ne correspond aux filtres sélectionnés</p>
+        <div className="empty-state-tablet">
+          <FontAwesomeIcon icon={faBox} />
+          <p>Aucun produit</p>
         </div>
       ) : (
-        <>
-          <div className="results-summary">
-            {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''} affiché{filteredProducts.length > 1 ? 's' : ''}
-          </div>
-          
-          <div className="admin-products__grid">
-            {filteredProducts.map(product => (
-              <div key={product.id} className="product-admin-card">
-                <div className="product-admin-card__image-container">
+        <div className="products-grid-tablet">
+          {filteredProducts.map(product => {
+            const stockConfig = getStockConfig(product.stock);
+            const isEditing = editingStock === product.id;
+            const isDeleting = deletingProduct === product.id;
+
+            return (
+              <div 
+                key={product.id} 
+                className="product-card-tablet"
+                style={{
+                  borderLeft: `6px solid ${stockConfig.color}`
+                }}
+              >
+                {/* Image produit */}
+                <div className="product-image-tablet">
                   {product.image_url ? (
                     <img 
                       src={API_CONFIG.imageUrl(product.image_url)}
                       alt={product.name}
-                      className="product-admin-card__image"
                     />
                   ) : (
-                    <div className="product-admin-card__no-image">
-                      🍜<br/>Pas d'image
+                    <div className="no-image-tablet">
+                      <FontAwesomeIcon icon={faImage} />
+                      <span>Pas d'image</span>
                     </div>
                   )}
                   
-                  <label className="product-admin-card__upload-label">
+                  <label className="upload-btn-tablet">
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(e) => handleImageUpload(product.id, e.target.files[0])}
                       style={{ display: 'none' }}
                     />
-                    📷 Changer
+                    <FontAwesomeIcon icon={faImage} />
+                    Changer
                   </label>
                 </div>
 
-                <div className="product-admin-card__info">
-                  <div className="product-admin-card__header">
-                    <h3 className="product-admin-card__name">{product.name}</h3>
-                    <span className="product-admin-card__category">{product.category}</span>
-                  </div>
-                  
-                  <div className="product-admin-card__price">
-                    {parseFloat(product.price).toFixed(2)} €
-                  </div>
-                  
-                  <div className="product-admin-card__stock-section">
-                    <div className="stock-info">
-                      <span className="stock-info__label">Stock:</span>
-                      {editingStock === product.id ? (
-                        <div className="stock-edit">
-                          <input
-                            type="number"
-                            value={newStock}
-                            onChange={(e) => setNewStock(e.target.value)}
-                            className="stock-edit__input"
-                            min="0"
-                            autoFocus
-                          />
-                          <button 
-                            onClick={() => handleStockUpdate(product.id)}
-                            className="btn btn--small btn--success"
-                            title="Enregistrer"
-                          >
-                            ✓
-                          </button>
-                          <button 
-                            onClick={() => setEditingStock(null)}
-                            className="btn btn--small btn--danger"
-                            title="Annuler"
-                          >
-                            ✗
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="stock-display">
-                          <span className={`stock-badge ${getStockClass(product.stock)}`}>
-                            {product.stock} unités
-                          </span>
-                          <span className="stock-status">{getStockLabel(product.stock)}</span>
-                          <button 
-                            onClick={() => startEditStock(product)}
-                            className="btn-icon"
-                            title="Modifier le stock"
-                          >
-                            ✏️
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                {/* Infos produit */}
+                <div className="product-info-tablet">
+                  <div className="product-header-tablet">
+                    <h3>{product.name}</h3>
+                    <span className="category-badge-tablet">{product.category}</span>
                   </div>
 
-                  <div className="product-admin-card__availability">
-                    <label className="toggle-label">
-                      <input
-                        type="checkbox"
-                        checked={product.available}
-                        onChange={(e) => handleAvailabilityToggle(product.id, e.target.checked)}
-                        className="toggle-label__input"
+                  <div className="product-price-tablet">
+                    {parseFloat(product.price).toFixed(2)} €
+                  </div>
+
+                  {/* Gestion du stock */}
+                  <div className="stock-section-tablet">
+                    {isEditing ? (
+                      <div className="stock-edit-tablet">
+                        <input
+                          type="number"
+                          value={newStock}
+                          onChange={(e) => setNewStock(e.target.value)}
+                          min="0"
+                          autoFocus
+                        />
+                        <button 
+                          onClick={() => handleStockUpdate(product.id)}
+                          className="btn-confirm-tablet"
+                        >
+                          <FontAwesomeIcon icon={faCheck} />
+                        </button>
+                        <button 
+                          onClick={() => setEditingStock(null)}
+                          className="btn-cancel-tablet"
+                        >
+                          <FontAwesomeIcon icon={faTimes} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="stock-display-tablet">
+                        <div 
+                          className="stock-badge-tablet"
+                          style={{
+                            background: stockConfig.bgColor,
+                            color: stockConfig.color
+                          }}
+                        >
+                          <FontAwesomeIcon icon={stockConfig.icon} />
+                          <span className="stock-value">{product.stock}</span>
+                          <span className="stock-label">{stockConfig.label}</span>
+                        </div>
+                        <button 
+                          onClick={() => startEditStock(product)}
+                          className="btn-edit-stock-tablet"
+                        >
+                          <FontAwesomeIcon icon={faEdit} />
+                          Modifier
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions : Toggle disponibilité + Supprimer */}
+                  <div className="product-actions-tablet">
+                    <button
+                      className={`availability-btn-tablet ${product.available ? 'available' : 'unavailable'}`}
+                      onClick={() => handleAvailabilityToggle(product.id, !product.available)}
+                    >
+                      <FontAwesomeIcon 
+                        icon={product.available ? faToggleOn : faToggleOff} 
                       />
-                      <span className="toggle-label__slider"></span>
-                      <span className="toggle-label__text">
-                        {product.available ? 'Disponible' : 'Indisponible'}
-                      </span>
-                    </label>
+                      <span>{product.available ? 'Disponible' : 'Indisponible'}</span>
+                    </button>
+
+                    <button
+                      className={`delete-btn-tablet ${isDeleting ? 'confirm' : ''}`}
+                      onClick={() => handleDeleteProduct(product.id)}
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                      <span>{isDeleting}</span>
+                    </button>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </>
+            );
+          })}
+        </div>
       )}
     </div>
   );

@@ -93,9 +93,7 @@ function Footer() {
             </p>
             <p>
               Powered by{" "}
-              <a href="https://supaco-digital.com/">
-                <span className="supaco">Supaco</span>
-              </a>
+              <a href="https://supaco-digital.com" className="supaco">Supaco</a>
             </p>
 
             <div className="footer__legal">

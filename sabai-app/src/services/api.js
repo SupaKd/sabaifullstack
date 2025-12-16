@@ -260,6 +260,7 @@ class APIService {
       body: JSON.stringify({ session_id: sessionId })
     });
   }
+  
 }
 
 export default new APIService();

@@ -1,4 +1,4 @@
-// ===== src/components/CartItem.jsx (Version Optimisée avec notify.js) =====
+// ===== src/components/CartItem.jsx (Version avec gestion conditionnelle d'image) =====
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -8,6 +8,7 @@ import {
   faTrash,
   faExclamationTriangle,
   faExclamationCircle,
+  faUtensils, // ✅ Icône de remplacement
 } from "@fortawesome/free-solid-svg-icons";
 import {
   notifyQuantityUpdated,
@@ -19,6 +20,8 @@ import API_CONFIG from '../services/api.config';
 const CartItem = ({ item }) => {
   const { updateQuantity, removeItem } = useCart();
   const [isRemoving, setIsRemoving] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false); // ✅ État pour savoir si l'image est chargée
+  const [imageError, setImageError] = useState(false); // ✅ État pour les erreurs d'image
 
   if (!item?.product) return null;
 
@@ -31,21 +34,35 @@ const CartItem = ({ item }) => {
   const isLowStock = stock > 0 && stock < 10;
   const hasStockIssue = quantity > stock;
 
+  // ✅ Vérifier si le produit a une image valide
+  const hasValidImage = () => {
+    return item.product.image_url && 
+           item.product.image_url.trim() !== '' && 
+           item.product.image_url !== 'null' &&
+           item.product.image_url !== 'undefined';
+  };
+
   // Gestion de l'image avec fallback
   const getImageUrl = () => {
-    if (!item.product.image_url) {
-      return "/images/placeholder-food.jpg";
+    if (!hasValidImage()) {
+      return null;
     }
     
     if (item.product.image_url.startsWith("http")) {
       return item.product.image_url;
     }
     
-    return API_CONFIG.imageUrl(item.product.image_url); // ✅ Utilise le helper
+    return API_CONFIG.imageUrl(item.product.image_url);
   };
 
   const handleImageError = (e) => {
-    e.target.src = "/images/placeholder-food.jpg";
+    setImageError(true);
+    setImageLoaded(false);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageError(false);
   };
 
   // Incrémenter la quantité
@@ -62,7 +79,6 @@ const CartItem = ({ item }) => {
   // Décrémenter la quantité
   const handleDecrement = () => {
     if (quantity <= 1) {
-      // Suppression directe sans confirmation
       setIsRemoving(true);
       setTimeout(() => {
         removeItem(item.product.id);
@@ -98,21 +114,39 @@ const CartItem = ({ item }) => {
     isRemoving && "cart-item--removing",
     isOutOfStock && "cart-item--unavailable",
     hasStockIssue && "cart-item--warning",
+    !hasValidImage() && "cart-item--no-image", // ✅ Classe spéciale sans image
   ]
     .filter(Boolean)
     .join(" ");
 
+  const imageUrl = getImageUrl();
+
   return (
     <div className={cartItemClasses}>
-      {/* Image du produit */}
-      <div className="cart-item__image">
-        <img
-          src={getImageUrl()}
-          alt={item.product.name}
-          onError={handleImageError}
-          loading="lazy"
-        />
-      </div>
+      {/* ✅ Image du produit - CONDITIONNELLE */}
+      {imageUrl && !imageError ? (
+        <div className="cart-item__image">
+          <img
+            src={imageUrl}
+            alt={item.product.name}
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+            loading="lazy"
+            style={{ display: imageLoaded ? 'block' : 'none' }}
+          />
+          {/* Loader pendant le chargement */}
+          {!imageLoaded && (
+            <div className="cart-item__image-loader">
+              <div className="spinner"></div>
+            </div>
+          )}
+        </div>
+      ) : (
+        // ✅ Icône de remplacement si pas d'image
+        <div className="cart-item__image cart-item__image--placeholder">
+          <FontAwesomeIcon icon={faUtensils} className="placeholder-icon" />
+        </div>
+      )}
 
       {/* Détails du produit */}
       <div className="cart-item__details">

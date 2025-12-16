@@ -1,15 +1,21 @@
-.container__home {
-  position: relative;  // Permet à l’image de se positionner correctement
+// ===== Home.scss - Version adaptée au style actuel =====
 
+/* ============================
+   CONTAINER HOME
+============================ */
+.container__home {
+  position: relative;
 
   h1 {
     font-size: 2.5rem;
     font-weight: 700;
     color: #222;
     margin: 1rem;
-    span{
+    
+    span {
       color: $primary-color;
     }
+    
     @media screen and (min-width: 768px) {
       font-size: 3.5rem;
       text-align: center;
@@ -18,9 +24,8 @@
 }
 
 /* ===========================
-   BARRE DE FILTRES STICKY
+   BARRE DE FILTRES STICKY AMÉLIORÉE
 =========================== */
-
 .home__filters {
   position: sticky;
   top: 5.2rem;
@@ -28,40 +33,43 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.8rem 0.2rem;
-
   backdrop-filter: blur(8px);
   background: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.65),
     rgba(255, 255, 255, 0.45)
   );
-
   border-bottom: 1px solid #e5e5e5;
   overflow-x: auto;
+  scroll-behavior: smooth;
 
   &::-webkit-scrollbar {
     display: none;
   }
+
+  @media (min-width: 768px) {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 }
 
 /* ===========================
-   BOUTONS DE FILTRE
+   BOUTONS DE FILTRE AVEC COMPTEURS
 =========================== */
-
 .home__filter-btn {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.8rem 1.2rem;
-
   font-size: 0.9rem;
   font-weight: 600;
-
   border: none;
   border-radius: 8px;
-
   background: transparent;
   color: #222;
-
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease,
     box-shadow 0.25s ease;
 
@@ -70,6 +78,11 @@
     transform: translateY(-2px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
+
+  @media (min-width: 1024px) {
+    font-size: $font-size-base;
+    padding: $spacing-md $spacing-lg;
+  }
 }
 
 .home__filter-btn--active {
@@ -77,21 +90,136 @@
   color: #fff !important;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
+
+  .filter-btn__count {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+  }
 }
-
-
 
 /* ===========================
-   MESSAGE AUCUN PRODUIT
+   COMPTEURS SUR FILTRES
 =========================== */
-
-.home__empty {
-  margin-top: 1rem;
-  font-size: 1rem;
-  text-align: center;
-  opacity: 0.7;
+.filter-btn__label {
+  position: relative;
+  z-index: 1;
 }
 
+.filter-btn__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 0.4rem;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 11px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #222;
+  transition: all 0.25s ease;
+}
+
+/* ===========================
+   RÉSULTATS AVEC ANIMATION
+=========================== */
+.home__results {
+  animation: fadeIn 0.4s ease-in;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+.home__results--filtering {
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* ============================
+   CATÉGORIES
+============================ */
+#menu {
+  scroll-margin-top: 90px;
+}
+
+.home__category-section {
+  margin-bottom: $spacing-2xl;
+  animation: slideUp 0.5s ease-out;
+  scroll-margin-top: 180px; // ✅ Augmenté pour header fixed + filtres sticky + padding
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  &:last-of-type {
+    margin-bottom: $spacing-xl;
+  }
+
+  .home__products {
+    padding-top: $spacing-xs;
+  }
+}
+
+/* ===========================
+   HEADER DE CATÉGORIE AVEC COMPTEUR
+=========================== */
+.home__category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 2rem 1rem;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    margin: 1.5rem 1rem;
+  }
+}
+
+.home__category-title {
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  font-weight: 800;
+  color: #222;
+  padding-left: $spacing-sm;
+  position: relative;
+  margin: 0;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 4px;
+    background: $error;
+    border-radius: $radius-sm;
+  }
+}
+
+.home__category-count {
+  padding: 0.4rem 0.9rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  white-space: nowrap;
+}
 
 /* ============================
    GRID PRODUITS — MOBILE FIRST
@@ -103,8 +231,20 @@
   padding: $spacing-xl 0;
   margin: 2rem 1rem;
 
+  @media (min-width: 768px) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-xl;
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
+/* ============================
+   PRODUCT CARDS
+============================ */
 .product-card {
   display: flex;
   align-items: center;
@@ -168,59 +308,57 @@
   object-fit: cover;
 }
 
-.product-card__stock-info{
+.product-card__stock-info {
   font-size: 10px;
   color: $warning;
   margin-top: $spacing-xs;
 }
 
 /* ============================
-   CATÉGORIES
+   RESPONSIVE PRODUCT CARDS
 ============================ */
-#menu {
-  scroll-margin-top: 90px;
-}
-
-.home__category-section {
-  margin-bottom: $spacing-2xl;
-  &:last-of-type {
-    margin-bottom: $spacing-xl;
+@media (min-width: 1024px) {
+  .product-card {
+    justify-content: space-around;
   }
 }
 
-.home__category-title {
-  font-size: clamp(1.4rem, 4vw, 2.2rem);
-  font-weight: 800;
-  color: #222;
-  padding-left: $spacing-sm;
-  position: relative;
-  margin: 2rem 1rem;
+/* ===========================
+   MESSAGE AUCUN PRODUIT
+=========================== */
+.home__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  margin-top: 1rem;
 
+  p {
+    font-size: 1rem;
+    color: #666;
+    opacity: 0.7;
+    margin-bottom: 1.5rem;
+  }
 
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 4px;
-    bottom: 4px;
-    width: 4px;
-    background: $error;
-    border-radius: $radius-sm;
+  .btn {
+    padding: 0.75rem 2rem;
+    font-size: 0.95rem;
   }
 }
 
-.home__category-section .home__products {
-  padding-top: $spacing-xs;
-}
-
+/* ===========================
+   IMAGE OVERLAY
+=========================== */
 .menu__overlay-image {
   position: absolute;
-  top: 10px;                    // Colle juste sous le Hero sur mobile
+  top: 10px;
   right: 5%;
   width: clamp(80px, 10vw, 150px);
   pointer-events: none;
-  z-index: 1;                    // Passe au-dessus du fond mais sous le texte si nécessaire
   opacity: 0.9;
+  transition: all 0.3s ease;
 
   @media (min-width: 640px) {
     top: 20px;
@@ -243,32 +381,49 @@
   }
 }
 
+/* ===========================
+   LOADING STATE
+=========================== */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1rem;
 
-/* ============================
-   RESPONSIVE — MOBILE FIRST
-============================ */
-
-@media (min-width: 768px) {
-  .home__products {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: $spacing-xl;
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #222;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
   }
-  .home__filters {
-    justify-content: center;
+
+  p {
+    font-size: 1.1rem;
+    color: #666;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 }
 
-@media (min-width: 1024px) {
-  .home__filter-btn {
-    font-size: $font-size-base;
-    padding: $spacing-md $spacing-lg;
-  }
-  .home__products {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .product-card {
-    justify-content: space-around;
-  }
+/* ===========================
+   SMOOTH SCROLL
+=========================== */
+* {
+  scroll-behavior: smooth;
 }
 
+.home__category-section,
+.home__products > * {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}

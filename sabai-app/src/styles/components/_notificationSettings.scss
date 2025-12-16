@@ -1,0 +1,405 @@
+/* ===== NOTIFICATION SETTINGS COMPONENT ===== */
+
+.notification-settings {
+    position: relative;
+  }
+  
+  /* ========== BOUTON DÉCLENCHEUR ========== */
+  .settings-trigger {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    color: #495057;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    
+    /* Optimisation tactile */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  
+  .settings-trigger:hover {
+    background: #f8f9fa;
+    border-color: #007bff;
+    color: #007bff;
+  }
+  
+  .settings-trigger:active {
+    transform: scale(0.95);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* ========== PANEL DES PARAMÈTRES ========== */
+  .settings-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 360px;
+    max-width: 90vw;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    animation: slideDown 0.3s ease;
+    overflow: hidden;
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Header du panel */
+  .settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+  }
+  
+  .settings-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #f8f9fa;
+  }
+  
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    /* Optimisation tactile */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  .close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  
+  .close-btn:active {
+    transform: scale(0.95);
+  }
+  
+  /* Body du panel */
+  .settings-body {
+    padding: 20px;
+  }
+  
+  /* ========== ITEMS DE PARAMÈTRES ========== */
+  .setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .setting-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .setting-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #2c3e50;
+    flex: 1;
+  }
+  
+  .setting-label svg {
+    font-size: 18px;
+    color: #6c757d;
+  }
+  
+  .setting-label svg.text-success {
+    color: #28a745;
+  }
+  
+  .setting-label svg.text-danger {
+    color: #dc3545;
+  }
+  
+  .volume-percentage {
+    margin-left: auto;
+    font-size: 14px;
+    font-weight: 700;
+    color: #007bff;
+    min-width: 45px;
+    text-align: right;
+  }
+  
+  .setting-value {
+    display: flex;
+    align-items: center;
+  }
+  
+  .setting-value.full-width {
+    width: 100%;
+    margin-top: 12px;
+  }
+  
+  /* Badge de statut */
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .status-badge.connected {
+    background: #d4edda;
+    color: #155724;
+  }
+  
+  .status-badge.disconnected {
+    background: #f8d7da;
+    color: #721c24;
+  }
+  
+  /* ========== TOGGLE SWITCH ========== */
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 56px;
+    height: 32px;
+    cursor: pointer;
+  }
+  
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 32px;
+    transition: all 0.3s ease;
+  }
+  
+  .toggle-slider:before {
+    content: "";
+    position: absolute;
+    height: 24px;
+    width: 24px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  .toggle-switch input:checked + .toggle-slider {
+    background-color: #28a745;
+  }
+  
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+  }
+  
+  /* ========== CONTRÔLE DU VOLUME ========== */
+  .volume-control {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .volume-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 8px;
+    background: #e9ecef;
+    outline: none;
+    margin: 8px 0;
+    cursor: pointer;
+  }
+  
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.4);
+    transition: all 0.2s ease;
+  }
+  
+  .volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.6);
+  }
+  
+  .volume-slider::-webkit-slider-thumb:active {
+    transform: scale(0.95);
+  }
+  
+  .volume-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.4);
+    transition: all 0.2s ease;
+  }
+  
+  .volume-slider::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.6);
+  }
+  
+  .volume-slider::-moz-range-thumb:active {
+    transform: scale(0.95);
+  }
+  
+  /* Marqueurs de volume */
+  .volume-markers {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  
+  /* ========== BOUTON DE TEST ========== */
+  .test-sound-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    
+    /* Optimisation tactile */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  
+  .test-sound-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+  }
+  
+  .test-sound-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+  }
+  
+  /* ========== SÉPARATEUR ========== */
+  .divider {
+    height: 1px;
+    background: #e9ecef;
+    margin: 20px 0;
+  }
+  
+  /* ========== INFO ========== */
+  .settings-info {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    border-radius: 8px;
+  }
+  
+  .settings-info small {
+    font-size: 13px;
+    color: #495057;
+    line-height: 1.5;
+    display: block;
+  }
+  
+  .settings-info code {
+    padding: 2px 6px;
+    background: #e9ecef;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #dc3545;
+    font-weight: 600;
+  }
+  
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 768px) {
+    .settings-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90vw;
+      max-width: 400px;
+      animation: fadeIn 0.3s ease;
+    }
+  
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+  }
+  
+  /* ========== OVERLAY POUR MOBILE ========== */
+  @media (max-width: 768px) {
+    .settings-panel::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #f9f9f9;
+      z-index: -1;
+    }
+  }
+  

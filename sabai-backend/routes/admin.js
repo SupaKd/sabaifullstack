@@ -8,6 +8,7 @@ const { sendOrderStatusEmail } = require('../config/email');
 const { validateProductStock, validateOrderStatus } = require('../middleware/validation');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
+
 const JWT_SECRET = process.env.JWT_SECRET || 'votre_secret_jwt_a_changer';
 const JWT_EXPIRES_IN = '8h'; // Token valide 8 heures
 
@@ -395,32 +396,28 @@ router.patch('/products/:id', authenticateToken, requireAdmin, async (req, res, 
 router.delete('/products/:id', authenticateToken, requireAdmin, async (req, res, next) => {
   try {
     const pool = getPool();
-    const { id } = req.params;
-    const { deleteImage } = require('../middleware/upload');
+    const productId = req.params.id;
 
+    // Vérifier que le produit existe
     const [products] = await pool.query(
-      'SELECT image_url FROM products WHERE id = ?',
-      [id]
+      'SELECT * FROM products WHERE id = ?',
+      [productId]
     );
 
     if (products.length === 0) {
       return res.status(404).json({ 
-        success: false,
-        error: 'Produit non trouvé' 
+        success: false, 
+        message: 'Produit non trouvé' 
       });
     }
 
-    await pool.query('DELETE FROM products WHERE id = ?', [id]);
-
-    if (products[0].image_url) {
-      deleteImage(products[0].image_url);
-    }
+    // Supprimer le produit
+    await pool.query('DELETE FROM products WHERE id = ?', [productId]);
 
     res.json({ 
       success: true, 
       message: 'Produit supprimé avec succès' 
     });
-
   } catch (error) {
     next(error);
   }

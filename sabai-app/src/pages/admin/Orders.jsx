@@ -1,162 +1,146 @@
-// ===== src/pages/admin/Orders.jsx ===== (AVEC NOTIFICATIONS)
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
-import useAdminNotifications from '../../hooks/useAdminNotifications'; // ✅ AJOUTÉ
+// ===== src/pages/admin/Orders.jsx ===== (VERSION SIMPLIFIÉE TABLETTE)
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faArrowLeft,
+  faClock,
+  faUser,
+  faPhone,
+  faMapMarkerAlt,
+  faCommentDots,
+  faTruck,
+  faUtensils,
+  faCheck,
+  faHourglass,
+  faBan,
+  faBell,
+  faExclamationCircle,
+} from "@fortawesome/free-solid-svg-icons";
+import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
+import api from "../../services/api";
+import useAdminNotifications from "../../hooks/useAdminNotifications";
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState(null);
-  const [dateFilter, setDateFilter] = useState('all');
   const { logout } = useAuth();
 
-  // ✅ Déclarer la fonction AVANT le hook
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const data = await api.getAdminOrders(filter);
-      
+      // Charger toutes les commandes
+      const data = await api.getAdminOrders();
+
       if (data.success !== undefined) {
         setOrders(data.data || []);
       } else {
         setOrders(Array.isArray(data) ? data : []);
       }
     } catch (err) {
-      console.error('Erreur chargement commandes:', err);
+      console.error("Erreur chargement commandes:", err);
       setOrders([]);
-      alert('Erreur lors du chargement des commandes: ' + err.message);
+      toast.error("Erreur de chargement");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Hook de notifications APRÈS la déclaration de la fonction
   const { isConnected } = useAdminNotifications(loadOrders);
 
   useEffect(() => {
     loadOrders();
-  }, [filter, dateFilter]);
-
-  const loadOrders_OLD = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getAdminOrders(filter);
-      
-      if (data.success !== undefined) {
-        setOrders(data.data || []);
-      } else {
-        setOrders(Array.isArray(data) ? data : []);
-      }
-    } catch (err) {
-      console.error('Erreur chargement commandes:', err);
-      setOrders([]);
-      alert('Erreur lors du chargement des commandes: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, []);
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await api.updateOrderStatus(orderId, newStatus);
-      loadOrders();
-      alert('Statut mis à jour !');
-    } catch (err) {
-      alert('Erreur: ' + err.message);
-    }
-  };
 
-  const getStatusClass = (status) => {
-    return `order-card__status order-card__status--${status}`;
-  };
-
-  const getStatusLabel = (status) => {
-    const labels = {
-      pending: 'En attente',
-      confirmed: 'Confirmée',
-      preparing: 'En préparation',
-      delivering: 'En livraison',
-      completed: 'Terminée',
-      cancelled: 'Annulée'
-    };
-    return labels[status] || status;
-  };
-
-  const getFilteredOrdersByDate = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    return orders.filter(order => {
-      if (!order.delivery_date) return dateFilter === 'all';
-      
-      const deliveryDate = new Date(order.delivery_date);
-      deliveryDate.setHours(0, 0, 0, 0);
-
-      switch (dateFilter) {
-        case 'today':
-          return deliveryDate.getTime() === today.getTime();
-        case 'tomorrow':
-          return deliveryDate.getTime() === tomorrow.getTime();
-        case 'upcoming':
-          return deliveryDate > today;
-        default:
-          return true;
-      }
-    });
-  };
-
-  const groupOrdersByDeliveryDate = (ordersToGroup) => {
-    const grouped = {};
-    
-    ordersToGroup.forEach(order => {
-      const dateKey = order.delivery_date || 'no-date';
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
-      }
-      grouped[dateKey].push(order);
-    });
-
-    Object.keys(grouped).forEach(dateKey => {
-      grouped[dateKey].sort((a, b) => {
-        if (!a.delivery_time) return 1;
-        if (!b.delivery_time) return -1;
-        return a.delivery_time.localeCompare(b.delivery_time);
+      toast.success("✓ Statut mis à jour", {
+        duration: 2000,
+        style: {
+          fontSize: "18px",
+          padding: "16px 24px",
+        },
       });
-    });
 
-    return grouped;
+      loadOrders();
+    } catch (err) {
+      toast.error("Erreur de mise à jour");
+    }
   };
 
-  const formatDeliveryDate = (dateString) => {
-    if (!dateString) return 'Date non définie';
-    
-    const date = new Date(dateString);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    
-    const orderDate = new Date(date);
-    orderDate.setHours(0, 0, 0, 0);
+  const getStatusConfig = (status) => {
+    const configs = {
+      pending: {
+        label: "Nouvelle commande",
+        color: "#ffc107",
+        bgColor: "#fff8e1",
+        icon: faHourglass,
+        priority: 1,
+      },
+      confirmed: {
+        label: "Confirmée",
+        color: "#17a2b8",
+        bgColor: "#d1ecf1",
+        icon: faCheck,
+        priority: 2,
+      },
+      preparing: {
+        label: "En préparation",
+        color: "#28a745",
+        bgColor: "#d4edda",
+        icon: faUtensils,
+        priority: 3,
+      },
+      delivering: {
+        label: "En livraison",
+        color: "#6f42c1",
+        bgColor: "#e7d4f5",
+        icon: faTruck,
+        priority: 4,
+      },
+      completed: {
+        label: "Terminée",
+        color: "#6c757d",
+        bgColor: "#e9ecef",
+        icon: faCheck,
+        priority: 5,
+      },
+      cancelled: {
+        label: "Annulée",
+        color: "#dc3545",
+        bgColor: "#f8d7da",
+        icon: faBan,
+        priority: 6,
+      },
+    };
+    return configs[status] || configs.pending;
+  };
 
-    if (orderDate.getTime() === today.getTime()) {
-      return "Aujourd'hui";
-    } else if (orderDate.getTime() === tomorrow.getTime()) {
-      return "Demain";
-    }
+  const getNextStatuses = (currentStatus, orderType) => {
+    // Workflow pour livraison
+    const deliveryFlows = {
+      pending: ["confirmed", "cancelled"],
+      confirmed: ["preparing", "cancelled"],
+      preparing: ["delivering", "cancelled"],
+      delivering: ["completed", "cancelled"],
+      completed: [],
+      cancelled: [],
+    };
 
-    return date.toLocaleDateString('fr-FR', { 
-      weekday: 'long', 
-      day: 'numeric', 
-      month: 'long',
-      year: 'numeric'
-    });
+    // Workflow pour à emporter (pas de livraison)
+    const takeawayFlows = {
+      pending: ["confirmed", "cancelled"],
+      confirmed: ["preparing", "cancelled"],
+      preparing: ["completed", "cancelled"],
+      completed: [],
+      cancelled: [],
+    };
+
+    const flows = orderType === "delivery" ? deliveryFlows : takeawayFlows;
+    return flows[currentStatus] || [];
   };
 
   const formatDeliveryTime = (timeString) => {
@@ -164,204 +148,227 @@ const AdminOrders = () => {
     return timeString.slice(0, 5);
   };
 
-  const filteredOrders = getFilteredOrdersByDate();
-  const groupedOrders = groupOrdersByDeliveryDate(filteredOrders);
-  const sortedDates = Object.keys(groupedOrders).sort((a, b) => {
-    if (a === 'no-date') return 1;
-    if (b === 'no-date') return -1;
-    return a.localeCompare(b);
-  });
-
-  const countOrdersByDate = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    const counts = {
-      today: 0,
-      tomorrow: 0,
-      upcoming: 0
-    };
-
-    orders.forEach(order => {
-      if (!order.delivery_date) return;
-      
-      const deliveryDate = new Date(order.delivery_date);
-      deliveryDate.setHours(0, 0, 0, 0);
-
-      if (deliveryDate.getTime() === today.getTime()) {
-        counts.today++;
-      } else if (deliveryDate.getTime() === tomorrow.getTime()) {
-        counts.tomorrow++;
-      } else if (deliveryDate > today) {
-        counts.upcoming++;
-      }
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
     });
-
-    return counts;
   };
 
-  const dateCounts = countOrdersByDate();
-  const statusCounts = orders.reduce((acc, order) => {
-    acc[order.status] = (acc[order.status] || 0) + 1;
-    return acc;
-  }, {});
+  const formatTime = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Compter les nouvelles commandes (pending)
+  const pendingCount = orders.filter(
+    (order) => order.status === "pending"
+  ).length;
+
+  // Trier par statut (nouvelles en premier) puis par date
+  const sortedOrders = [...orders].sort((a, b) => {
+    // Priorité 1: Nouvelles commandes en premier
+    if (a.status === "pending" && b.status !== "pending") return -1;
+    if (a.status !== "pending" && b.status === "pending") return 1;
+
+    // Priorité 2: Par date (plus récentes en premier)
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
 
   return (
-    <div className="admin-orders">
-      {/* Header avec retour et indicateur de connexion */}
-      <div className="admin-orders__header">
-        <div className="admin-orders__header-left">
-          <Link to="/admin" className="btn-back">
-            ← Retour
-          </Link>
-          <h1 className="admin-orders__title">Gestion des commandes</h1>
-          
-          {/* ✅ AJOUTÉ : Indicateur de connexion */}
-          {isConnected && (
-            <span className="connection-badge connection-badge--active">
-              🔔 Notifications actives
+    <div className="admin-orders-tablet">
+      {/* Header simplifié */}
+      <div className="orders-header-tablet">
+        <Link to="/admin" className="back-btn-tablet">
+          <FontAwesomeIcon icon={faArrowLeft} />
+        </Link>
+
+        <h1>Commandes</h1>
+
+        <div className="header-badges">
+         
+
+          {/* Badge nouvelles commandes */}
+          {pendingCount > 0 && (
+            <span className="new-orders-badge">
+              <FontAwesomeIcon icon={faExclamationCircle} />
+              <span>
+                {pendingCount} nouvelle{pendingCount > 1 ? "s" : ""}
+              </span>
             </span>
           )}
-        </div>
-        <div className="admin-orders__summary">
-          <span className="summary-badge">{orders.length} commande(s) au total</span>
-        </div>
-      </div>
-
-      {/* Zone de filtres */}
-      <div className="filters-container">
-        <div className="filter-group">
-          <h3 className="filter-group__title">📊 Statut</h3>
-          <div className="filter-buttons">
-            <button 
-              onClick={() => setFilter('pending')} 
-              className={`filter-btn filter-btn--status-pending ${filter === 'pending' ? 'filter-btn--active' : ''}`}
-            >
-              En attente
-              {statusCounts.pending > 0 && <span className="filter-btn__count">{statusCounts.pending}</span>}
-            </button>
-            <button 
-              onClick={() => setFilter('confirmed')} 
-              className={`filter-btn filter-btn--status-confirmed ${filter === 'confirmed' ? 'filter-btn--active' : ''}`}
-            >
-              Confirmées
-              {statusCounts.confirmed > 0 && <span className="filter-btn__count">{statusCounts.confirmed}</span>}
-            </button>
-            <button 
-              onClick={() => setFilter('preparing')} 
-              className={`filter-btn filter-btn--status-preparing ${filter === 'preparing' ? 'filter-btn--active' : ''}`}
-            >
-              En préparation
-              {statusCounts.preparing > 0 && <span className="filter-btn__count">{statusCounts.preparing}</span>}
-            </button>
-            <button 
-              onClick={() => setFilter('delivering')} 
-              className={`filter-btn filter-btn--status-delivering ${filter === 'delivering' ? 'filter-btn--active' : ''}`}
-            >
-              En livraison
-              {statusCounts.delivering > 0 && <span className="filter-btn__count">{statusCounts.delivering}</span>}
-            </button>
-            <button 
-              onClick={() => setFilter(null)} 
-              className={`filter-btn filter-btn--secondary ${filter === null ? 'filter-btn--active' : ''}`}
-            >
-              Tous les statuts
-            </button>
-          </div>
         </div>
       </div>
 
       {/* Liste des commandes */}
       {loading ? (
-        <div className="loading">Chargement...</div>
+        <div className="loading-tablet">
+          <div className="spinner"></div>
+          <p>Chargement...</p>
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="empty-state-tablet">
+          <FontAwesomeIcon icon={faUtensils} />
+          <p>Aucune commande</p>
+        </div>
       ) : (
-        <div className="admin-orders__list">
-          {sortedDates.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state__icon">📦</div>
-              <h3 className="empty-state__title">Aucune commande trouvée</h3>
-              <p className="empty-state__text">Aucune commande ne correspond aux filtres sélectionnés</p>
-            </div>
-          ) : (
-            sortedDates.map(dateKey => (
-              <div key={dateKey} className="orders-by-date">
-                <div className="date-header">
-                  <div className="date-header__left">
-                    <h2 className="date-header__title">
-                      {formatDeliveryDate(dateKey !== 'no-date' ? dateKey : null)}
-                    </h2>
-                    <span className="date-header__count">
-                      {groupedOrders[dateKey].length} commande{groupedOrders[dateKey].length > 1 ? 's' : ''}
+        <div className="orders-list-tablet">
+          {sortedOrders.map((order) => {
+            const statusConfig = getStatusConfig(order.status);
+            const nextStatuses = getNextStatuses(
+              order.status,
+              order.order_type
+            );
+            const isNew = order.status === "pending";
+
+            return (
+              <div
+                key={order.id}
+                className={`order-card-tablet ${isNew ? "is-new" : ""}`}
+                style={{
+                  borderLeft: `6px solid ${statusConfig.color}`,
+                  background: statusConfig.bgColor,
+                }}
+              >
+                {/* Badge "NOUVELLE" pour les commandes non traitées */}
+                {isNew && (
+                  <div className="new-order-indicator">
+                    <FontAwesomeIcon icon={faExclamationCircle} />
+                    <span>NOUVELLE</span>
+                  </div>
+                )}
+
+                {/* Header de la commande */}
+                <div className="order-card-header-tablet">
+                  <div className="order-number-tablet">#{order.id}</div>
+
+                  {/* Badge Type de commande */}
+                  <div
+                    className="order-type-badge-tablet"
+                    style={{
+                      background:
+                        order.order_type === "delivery" ? "#6f42c1" : "#17a2b8",
+                      color: "white",
+                    }}
+                  >
+                    <FontAwesomeIcon
+                      icon={
+                        order.order_type === "delivery" ? faTruck : faUtensils
+                      }
+                    />
+                    <span>
+                      {order.order_type === "delivery"
+                        ? "Livraison"
+                        : "À emporter"}
                     </span>
+                  </div>
+
+                  <div
+                    className="order-status-badge-tablet"
+                    style={{
+                      background: statusConfig.color,
+                      color: "white",
+                    }}
+                  >
+                    <FontAwesomeIcon icon={statusConfig.icon} />
+                    <span>{statusConfig.label}</span>
+                  </div>
+
+                  <div className="order-time-tablet">
+                    <FontAwesomeIcon icon={faClock} />
+                    {order.delivery_time
+                      ? formatDeliveryTime(order.delivery_time)
+                      : formatTime(order.created_at)}
                   </div>
                 </div>
 
-                <div className="orders-list">
-                  {groupedOrders[dateKey].map(order => (
-                    <div key={order.id} className="order-card">
-                      <div className="order-card__header">
-                        <div className="order-card__primary-info">
-                          <h3 className="order-card__id">#{order.id}</h3>
-                          {order.delivery_time && (
-                            <div className="order-card__delivery-time">
-                              🕐 {formatDeliveryTime(order.delivery_time)}
-                            </div>
-                          )}
-                          <div className={getStatusClass(order.status)}>
-                            {getStatusLabel(order.status)}
-                          </div>
-                        </div>
-                        <div className="order-card__total-amount">
-                          {parseFloat(order.total_amount).toFixed(2)} €
-                        </div>
-                      </div>
+                {/* Infos client */}
+                <div className="order-client-tablet">
+                  <div className="client-row">
+                    <FontAwesomeIcon icon={faUser} />
+                    <span className="client-name">{order.customer_name}</span>
+                  </div>
 
-                      <div className="order-card__body">
-                        <div className="order-card__customer">
-                          <div className="customer-info">
-                            <span className="customer-info__name">👤 {order.customer_name}</span>
-                            <span className="customer-info__phone">📱 {order.customer_phone}</span>
-                          </div>
-                          <div className="customer-info__address">
-                            📍 {order.delivery_address}
-                          </div>
-                          {order.notes && (
-                            <div className="order-card__notes">💬 {order.notes}</div>
-                          )}
-                        </div>
-                        <div className="order-card__items">{order.items}</div>
-                      </div>
+                  <div className="client-row">
+                    <FontAwesomeIcon icon={faPhone} />
+                    <a
+                      href={`tel:${order.customer_phone}`}
+                      className="client-phone"
+                    >
+                      {order.customer_phone}
+                    </a>
+                  </div>
 
-                      <div className="order-card__actions">
-                        <label className="order-card__actions-label">Modifier le statut :</label>
-                        <select
-                          value={order.status}
-                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                          className="order-card__status-select"
-                        >
-                          <option value="pending">En attente</option>
-                          <option value="confirmed">Confirmée</option>
-                          <option value="preparing">En préparation</option>
-                          <option value="delivering">En livraison</option>
-                          <option value="completed">Terminée</option>
-                          <option value="cancelled">Annulée</option>
-                        </select>
-                      </div>
-                      
-                      <div className="order-card__footer">
-                        <span className="order-card__created-at">
-                          Créée le {new Date(order.created_at).toLocaleString('fr-FR')}
-                        </span>
-                      </div>
+                  {order.delivery_address && (
+                    <div className="client-row">
+                      <FontAwesomeIcon icon={faMapMarkerAlt} />
+                      <span className="client-address">
+                        {order.delivery_address}
+                      </span>
                     </div>
-                  ))}
+                  )}
+                </div>
+
+                {/* Articles */}
+                <div className="order-items-tablet">
+                  <div className="items-label">Articles :</div>
+                  <div className="items-content">{order.items}</div>
+                </div>
+
+                {/* Notes */}
+                {order.notes && (
+                  <div className="order-notes-tablet">
+                    <FontAwesomeIcon icon={faCommentDots} />
+                    <span>{order.notes}</span>
+                  </div>
+                )}
+
+                {/* Footer avec montant et actions */}
+                <div className="order-footer-tablet">
+                  <div className="order-total-tablet">
+                    {parseFloat(order.total_amount).toFixed(2)} €
+                  </div>
+
+                  {/* Boutons d'action rapide */}
+                  {nextStatuses.length > 0 && (
+                    <div className="order-actions-tablet">
+                      {nextStatuses.map((nextStatus) => {
+                        const nextConfig = getStatusConfig(nextStatus);
+                        return (
+                          <button
+                            key={nextStatus}
+                            onClick={() =>
+                              handleStatusChange(order.id, nextStatus)
+                            }
+                            className="action-btn-tablet"
+                            style={{
+                              background: nextConfig.color,
+                              color: "white",
+                            }}
+                          >
+                            <FontAwesomeIcon icon={nextConfig.icon} />
+                            {nextConfig.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Timestamp */}
+                <div className="order-timestamp-tablet">
+                  Commander à {formatTime(order.created_at)} le{" "}
+                  {formatDate(order.created_at)}
                 </div>
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
       )}
     </div>

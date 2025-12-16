@@ -56,7 +56,7 @@ const NotificationSettings = ({ volume, setVolume, soundEnabled, setSoundEnabled
       {isOpen && (
         <div className="settings-panel">
           <div className="settings-header">
-            <h3>🔔 Paramètres des notifications</h3>
+            <h3>Paramètres des notifications</h3>
             <button 
               className="close-btn"
               onClick={() => setIsOpen(false)}
@@ -120,11 +120,7 @@ const NotificationSettings = ({ volume, setVolume, soundEnabled, setSoundEnabled
                     onChange={handleVolumeChange}
                     className="volume-slider"
                   />
-                  <div className="volume-markers">
-                    <span>0%</span>
-                    <span>50%</span>
-                    <span>100%</span>
-                  </div>
+                 
                 </div>
               </div>
             )}
@@ -140,14 +136,6 @@ const NotificationSettings = ({ volume, setVolume, soundEnabled, setSoundEnabled
                 </button>
               </div>
             )}
-
-            {/* Info */}
-            <div className="settings-info">
-              <small>
-                💡 Le son se joue automatiquement à chaque nouvelle commande.
-                Placez un fichier <code>notification.mp3</code> dans le dossier <code>public/</code>
-              </small>
-            </div>
           </div>
         </div>
       )}
