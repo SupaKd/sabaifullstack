@@ -1,8 +1,9 @@
-// ===== src/pages/admin/Products.jsx ===== (VERSION CORRIGÉE)
+// ===== src/pages/admin/Products.jsx ===== (VERSION CORRIGÉE - ORDRE FIXÉ)
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import API_CONFIG from '../../services/api.config';
+import useAdminNotifications from '../../hooks/useAdminNotifications';
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -12,17 +13,12 @@ const AdminProducts = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  // ✅ FONCTION CORRIGÉE
+  // ✅ IMPORTANT : Déclarer loadProducts AVANT le hook
   const loadProducts = async () => {
     try {
       setLoading(true);
       const data = await api.getAdminProducts();
       
-      // ✅ Gérer le format { success: true, data: [...] }
       if (data.success) {
         setProducts(data.data || []);
       } else if (Array.isArray(data)) {
@@ -37,6 +33,14 @@ const AdminProducts = () => {
       setLoading(false);
     }
   };
+
+  // ✅ Hook appelé APRÈS la déclaration de loadProducts
+  const { isConnected } = useAdminNotifications(loadProducts);
+
+  // ✅ useEffect vient après
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
   const handleStockUpdate = async (productId) => {
     try {
@@ -60,7 +64,6 @@ const AdminProducts = () => {
     }
   };
 
-  // ✅ FONCTION CORRIGÉE - Avec token
   const handleAvailabilityToggle = async (productId, newAvailability) => {
     try {
       await api.updateProductAvailability(productId, newAvailability);
@@ -92,10 +95,8 @@ const AdminProducts = () => {
     return 'Stock OK';
   };
 
-  // Obtenir toutes les catégories uniques
   const categories = [...new Set(products.map(p => p.category))];
 
-  // Statistiques des stocks
   const stockStats = {
     total: products.length,
     lowStock: products.filter(p => p.stock < 10 && p.stock > 0).length,
@@ -103,7 +104,6 @@ const AdminProducts = () => {
     available: products.filter(p => p.available).length
   };
 
-  // Filtrer les produits
   const filteredProducts = products.filter(product => {
     const matchCategory = categoryFilter === 'all' || product.category === categoryFilter;
     const matchStock = 
@@ -117,13 +117,20 @@ const AdminProducts = () => {
 
   return (
     <div className="admin-products">
-      {/* Header avec retour */}
+      {/* Header avec retour et indicateur de connexion */}
       <div className="admin-products__header">
         <div className="admin-products__header-left">
           <Link to="/admin" className="btn-back">
             ← Retour
           </Link>
           <h1 className="admin-products__title">Gestion des produits</h1>
+          
+          {/* Indicateur de connexion */}
+          {isConnected && (
+            <span className="connection-badge connection-badge--active">
+              🔔 Alertes stock actives
+            </span>
+          )}
         </div>
       </div>
 
@@ -218,14 +225,13 @@ const AdminProducts = () => {
           <div className="admin-products__grid">
             {filteredProducts.map(product => (
               <div key={product.id} className="product-admin-card">
-                {/* Image et upload */}
                 <div className="product-admin-card__image-container">
                   {product.image_url ? (
                     <img 
-                    src={API_CONFIG.imageUrl(product.image_url)} // ✅ Utilise le helper
-                    alt={product.name}
-                    className="product-admin-card__image"
-                  />
+                      src={API_CONFIG.imageUrl(product.image_url)}
+                      alt={product.name}
+                      className="product-admin-card__image"
+                    />
                   ) : (
                     <div className="product-admin-card__no-image">
                       🍜<br/>Pas d'image
@@ -243,7 +249,6 @@ const AdminProducts = () => {
                   </label>
                 </div>
 
-                {/* Informations du produit */}
                 <div className="product-admin-card__info">
                   <div className="product-admin-card__header">
                     <h3 className="product-admin-card__name">{product.name}</h3>
@@ -254,7 +259,6 @@ const AdminProducts = () => {
                     {parseFloat(product.price).toFixed(2)} €
                   </div>
                   
-                  {/* Section stock améliorée */}
                   <div className="product-admin-card__stock-section">
                     <div className="stock-info">
                       <span className="stock-info__label">Stock:</span>
@@ -301,7 +305,6 @@ const AdminProducts = () => {
                     </div>
                   </div>
 
-                  {/* ✅ Disponibilité CORRIGÉE */}
                   <div className="product-admin-card__availability">
                     <label className="toggle-label">
                       <input

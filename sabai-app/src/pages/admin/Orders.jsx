@@ -1,7 +1,9 @@
+// ===== src/pages/admin/Orders.jsx ===== (AVEC NOTIFICATIONS)
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import useAdminNotifications from '../../hooks/useAdminNotifications'; // ✅ AJOUTÉ
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -10,16 +12,12 @@ const AdminOrders = () => {
   const [dateFilter, setDateFilter] = useState('all');
   const { logout } = useAuth();
 
-  useEffect(() => {
-    loadOrders();
-  }, [filter, dateFilter]);
-
+  // ✅ Déclarer la fonction AVANT le hook
   const loadOrders = async () => {
     try {
       setLoading(true);
       const data = await api.getAdminOrders(filter);
       
-      // ✅ Gérer les deux formats de réponse possibles
       if (data.success !== undefined) {
         setOrders(data.data || []);
       } else {
@@ -28,8 +26,32 @@ const AdminOrders = () => {
     } catch (err) {
       console.error('Erreur chargement commandes:', err);
       setOrders([]);
+      alert('Erreur lors du chargement des commandes: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Hook de notifications APRÈS la déclaration de la fonction
+  const { isConnected } = useAdminNotifications(loadOrders);
+
+  useEffect(() => {
+    loadOrders();
+  }, [filter, dateFilter]);
+
+  const loadOrders_OLD = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getAdminOrders(filter);
       
-      // Afficher une notification d'erreur
+      if (data.success !== undefined) {
+        setOrders(data.data || []);
+      } else {
+        setOrders(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Erreur chargement commandes:', err);
+      setOrders([]);
       alert('Erreur lors du chargement des commandes: ' + err.message);
     } finally {
       setLoading(false);
@@ -182,8 +204,6 @@ const AdminOrders = () => {
   };
 
   const dateCounts = countOrdersByDate();
-
-  // Compter les commandes par statut
   const statusCounts = orders.reduce((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
@@ -191,25 +211,28 @@ const AdminOrders = () => {
 
   return (
     <div className="admin-orders">
-      {/* Header avec retour */}
+      {/* Header avec retour et indicateur de connexion */}
       <div className="admin-orders__header">
         <div className="admin-orders__header-left">
           <Link to="/admin" className="btn-back">
             ← Retour
           </Link>
           <h1 className="admin-orders__title">Gestion des commandes</h1>
+          
+          {/* ✅ AJOUTÉ : Indicateur de connexion */}
+          {isConnected && (
+            <span className="connection-badge connection-badge--active">
+              🔔 Notifications actives
+            </span>
+          )}
         </div>
         <div className="admin-orders__summary">
           <span className="summary-badge">{orders.length} commande(s) au total</span>
         </div>
       </div>
 
-      {/* Zone de filtres compacte et organisée */}
+      {/* Zone de filtres */}
       <div className="filters-container">
-        {/* Filtres de date en priorité (plus utilisés) */}
-        
-
-        {/* Filtres de statut */}
         <div className="filter-group">
           <h3 className="filter-group__title">📊 Statut</h3>
           <div className="filter-buttons">
@@ -265,7 +288,6 @@ const AdminOrders = () => {
           ) : (
             sortedDates.map(dateKey => (
               <div key={dateKey} className="orders-by-date">
-                {/* En-tête de date amélioré */}
                 <div className="date-header">
                   <div className="date-header__left">
                     <h2 className="date-header__title">
@@ -277,11 +299,9 @@ const AdminOrders = () => {
                   </div>
                 </div>
 
-                {/* Liste des commandes pour cette date */}
                 <div className="orders-list">
                   {groupedOrders[dateKey].map(order => (
                     <div key={order.id} className="order-card">
-                      {/* En-tête de commande plus compact */}
                       <div className="order-card__header">
                         <div className="order-card__primary-info">
                           <h3 className="order-card__id">#{order.id}</h3>
@@ -299,7 +319,6 @@ const AdminOrders = () => {
                         </div>
                       </div>
 
-                      {/* Corps de la commande */}
                       <div className="order-card__body">
                         <div className="order-card__customer">
                           <div className="customer-info">
@@ -316,7 +335,6 @@ const AdminOrders = () => {
                         <div className="order-card__items">{order.items}</div>
                       </div>
 
-                      {/* Actions */}
                       <div className="order-card__actions">
                         <label className="order-card__actions-label">Modifier le statut :</label>
                         <select
@@ -333,7 +351,6 @@ const AdminOrders = () => {
                         </select>
                       </div>
                       
-                      {/* Métadonnées en bas */}
                       <div className="order-card__footer">
                         <span className="order-card__created-at">
                           Créée le {new Date(order.created_at).toLocaleString('fr-FR')}

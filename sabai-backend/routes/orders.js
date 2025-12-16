@@ -1,4 +1,4 @@
-// ===== routes/orders.js ===== (VERSION ORIGINALE)
+// ===== routes/orders.js ===== (VERSION OPTIMISÉE)
 const express = require('express');
 const router = express.Router();
 const { getPool } = require('../config/database');
@@ -6,421 +6,588 @@ const { sendConfirmationEmail, sendOrderStatusEmail } = require('../config/email
 const { validateOrder } = require('../middleware/validation');
 const rateLimiter = require('../middleware/rateLimiter');
 const { checkServiceAvailability } = require('../middleware/checkServiceAvailability');
+const { notifyAdmins } = require('../config/websocket');
+const { authenticateAdmin } = require('../middleware/auth'); // ⚠️ À créer
 
+// ===== CONSTANTES =====
+const VALID_ORDER_TYPES = ['delivery', 'takeaway'];
+const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'delivering', 'ready', 'completed', 'cancelled'];
+const TIME_BUFFER_MS = 5 * 60 * 1000; // 5 minutes
+const DEFAULT_DELIVERY_FEE = 5;
+const DEFAULT_MIN_ORDER = 30;
 
-// --- POST /api/orders ---
-router.post('/', checkServiceAvailability, rateLimiter(5, 60000), validateOrder, async (req, res, next) => {
-  const pool = getPool();
-  const connection = await pool.getConnection();
+// ===== HELPERS =====
+
+/**
+ * Valide le format de date et heure et vérifie qu'ils sont dans le futur
+ */
+function validateDateTime(delivery_date, delivery_time, order_type) {
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
+
+  if (!dateRegex.test(delivery_date)) {
+    throw new Error('Format de date invalide. Utilisez YYYY-MM-DD');
+  }
+
+  if (!timeRegex.test(delivery_time)) {
+    throw new Error('Format d\'heure invalide. Utilisez HH:MM ou HH:MM:SS');
+  }
+
+  const deliveryDateTime = new Date(`${delivery_date}T${delivery_time}`);
+  const minAllowedTime = new Date(Date.now() - TIME_BUFFER_MS);
   
-  try {
-    await connection.beginTransaction();
+  if (deliveryDateTime <= minAllowedTime) {
+    const action = order_type === 'delivery' ? 'de livraison' : 'de retrait';
+    throw new Error(`La date et l'heure ${action} doivent être dans le futur`);
+  }
+
+  return deliveryDateTime;
+}
+
+/**
+ * Récupère les paramètres de livraison
+ */
+async function getDeliverySettings(connection) {
+  const [settings] = await connection.query(
+    `SELECT setting_key, setting_value 
+     FROM service_settings 
+     WHERE setting_key IN ('delivery_enabled', 'delivery_fee', 'delivery_min_amount')`
+  );
+  
+  const config = {
+    enabled: false,
+    fee: DEFAULT_DELIVERY_FEE,
+    minAmount: DEFAULT_MIN_ORDER
+  };
+
+  settings.forEach(s => {
+    if (s.setting_key === 'delivery_enabled') {
+      config.enabled = s.setting_value === 'true';
+    } else {
+      config[s.setting_key === 'delivery_fee' ? 'fee' : 'minAmount'] = parseFloat(s.setting_value);
+    }
+  });
+
+  return config;
+}
+
+/**
+ * Valide les items et calcule le total (avec lock pessimiste)
+ */
+async function validateAndCalculateItems(connection, items) {
+  if (!items || items.length === 0) {
+    throw new Error('La commande doit contenir au moins un article');
+  }
+
+  const productIds = items.map(item => item.product_id);
+  
+  // Lock FOR UPDATE pour éviter les race conditions sur le stock
+  const [products] = await connection.query(
+    `SELECT id, name, price, stock 
+     FROM products 
+     WHERE id IN (?) AND available = true
+     FOR UPDATE`,
+    [productIds]
+  );
+
+  if (products.length !== items.length) {
+    throw new Error('Un ou plusieurs produits sont indisponibles');
+  }
+
+  const productMap = new Map(products.map(p => [p.id, p]));
+  let total = 0;
+  const orderDetails = [];
+
+  for (const item of items) {
+    const product = productMap.get(item.product_id);
     
-    const { 
-      order_type = 'delivery',
-      customer_name, 
-      customer_email, 
-      customer_phone, 
-      delivery_address,
+    if (!product) {
+      throw new Error(`Produit ${item.product_id} non trouvé`);
+    }
+
+    if (product.stock < item.quantity) {
+      throw new Error(
+        `Stock insuffisant pour ${product.name} (disponible: ${product.stock}, demandé: ${item.quantity})`
+      );
+    }
+
+    if (item.quantity <= 0) {
+      throw new Error(`Quantité invalide pour ${product.name}`);
+    }
+
+    const itemTotal = product.price * item.quantity;
+    total += itemTotal;
+
+    orderDetails.push({
+      product_id: product.id,
+      name: product.name,
+      quantity: item.quantity,
+      price: product.price
+    });
+  }
+
+  return { orderDetails, total };
+}
+
+/**
+ * Crée une commande (logique partagée)
+ */
+async function createOrder(connection, orderData) {
+  const {
+    order_type,
+    customer_name,
+    customer_email,
+    customer_phone,
+    delivery_address,
+    delivery_date,
+    delivery_time,
+    items,
+    notes,
+    payment_status = 'paid',
+    payment_method = 'card'
+  } = orderData;
+
+  // Validation de base
+  if (!customer_name?.trim() || !customer_email?.trim() || !customer_phone?.trim()) {
+    throw new Error('Informations client incomplètes');
+  }
+
+  if (!VALID_ORDER_TYPES.includes(order_type)) {
+    throw new Error(`Type de commande invalide. Utilisez: ${VALID_ORDER_TYPES.join(', ')}`);
+  }
+
+  // Validation date/heure
+  validateDateTime(delivery_date, delivery_time, order_type);
+
+  // Vérification livraison
+  const deliverySettings = await getDeliverySettings(connection);
+  
+  if (order_type === 'delivery') {
+    if (!deliverySettings.enabled) {
+      throw new Error('La livraison est actuellement désactivée. Veuillez choisir le retrait au restaurant.');
+    }
+    
+    if (!delivery_address?.trim()) {
+      throw new Error('L\'adresse de livraison est obligatoire');
+    }
+  }
+
+  // Validation et calcul des items
+  const { orderDetails, total: subtotal } = await validateAndCalculateItems(connection, items);
+
+  // Calcul des frais de livraison
+  let deliveryFee = 0;
+  let total = subtotal;
+
+  if (order_type === 'delivery') {
+    if (subtotal < deliverySettings.minAmount) {
+      throw new Error(
+        `Minimum de commande ${deliverySettings.minAmount.toFixed(2)}€ requis pour la livraison`
+      );
+    }
+    deliveryFee = deliverySettings.fee;
+    total += deliveryFee;
+  }
+
+  // Insertion de la commande
+  const [orderResult] = await connection.query(
+    `INSERT INTO orders (
+      order_type, customer_name, customer_email, customer_phone, 
+      delivery_address, delivery_date, delivery_time, 
+      total_amount, delivery_fee, notes, payment_status, payment_method
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      order_type,
+      customer_name.trim(),
+      customer_email.trim(),
+      customer_phone.trim(),
+      order_type === 'delivery' ? delivery_address?.trim() : null,
       delivery_date,
       delivery_time,
-      items, 
-      notes 
-    } = req.body;
+      total,
+      deliveryFee,
+      notes?.trim() || null,
+      payment_status,
+      payment_method
+    ]
+  );
 
-    // Vérifier si la livraison est activée
-    if (order_type === 'delivery') {
-      const [deliverySettings] = await connection.query(
-        "SELECT setting_value FROM service_settings WHERE setting_key = 'delivery_enabled'"
-      );
-      
-      const deliveryEnabled = deliverySettings[0]?.setting_value === 'true';
-      
-      if (!deliveryEnabled) {
-        throw new Error('La livraison est actuellement désactivée. Veuillez choisir le retrait au restaurant.');
-      }
-    }
+  const orderId = orderResult.insertId;
 
-    if (!customer_name || !customer_email || !customer_phone) {
-      throw new Error('Informations client incomplètes');
-    }
+  // Insertion en batch des items et mise à jour du stock
+  const itemValues = [];
+  const stockUpdates = [];
 
-    if (!['delivery', 'takeaway'].includes(order_type)) {
-      throw new Error('Type de commande invalide. Utilisez "delivery" ou "takeaway"');
-    }
+  for (const item of orderDetails) {
+    itemValues.push([
+      orderId,
+      item.product_id,
+      item.name,
+      item.quantity,
+      item.price
+    ]);
 
-    if (order_type === 'delivery' && !delivery_address) {
-      throw new Error('L\'adresse de livraison est obligatoire pour une livraison');
-    }
+    stockUpdates.push([item.quantity, item.product_id]);
+  }
 
-    if (!delivery_date || !delivery_time) {
-      throw new Error(`La date et l'heure ${order_type === 'delivery' ? 'de livraison' : 'de retrait'} sont obligatoires`);
-    }
+  // Insertion batch des items
+  await connection.query(
+    `INSERT INTO order_items (order_id, product_id, product_name, quantity, price) 
+     VALUES ?`,
+    [itemValues]
+  );
 
-    // Validation date/heure dans le futur (avec marge de 5 minutes)
-    const deliveryDateTime = new Date(`${delivery_date}T${delivery_time}`);
-    const now = new Date();
-    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+  // Mise à jour batch du stock
+  for (const [quantity, productId] of stockUpdates) {
+    await connection.query(
+      'UPDATE products SET stock = stock - ? WHERE id = ?',
+      [quantity, productId]
+    );
+  }
+
+  return { orderId, total, orderDetails, deliveryFee };
+}
+
+// ===== ROUTES =====
+
+/**
+ * POST /api/orders - Créer une nouvelle commande
+ */
+router.post('/', 
+  checkServiceAvailability, 
+  rateLimiter(5, 60000), 
+  validateOrder, 
+  async (req, res, next) => {
+    const pool = getPool();
+    const connection = await pool.getConnection();
     
-    if (deliveryDateTime <= fiveMinutesAgo) {
-      throw new Error(`La date et l'heure ${order_type === 'delivery' ? 'de livraison' : 'de retrait'} doivent être dans le futur`);
-    }
-
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(delivery_date)) {
-      throw new Error('Format de date invalide. Utilisez YYYY-MM-DD');
-    }
-
-    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
-    if (!timeRegex.test(delivery_time)) {
-      throw new Error('Format d\'heure invalide. Utilisez HH:MM ou HH:MM:SS');
-    }
-
-    let total = 0;
-    const orderDetails = [];
-
-    for (const item of items) {
-      const [products] = await connection.query(
-        'SELECT id, name, price, stock FROM products WHERE id = ? AND available = true',
-        [item.product_id]
-      );
-
-      if (products.length === 0) {
-        throw new Error(`Produit ${item.product_id} non disponible`);
-      }
-
-      if (products[0].stock < item.quantity) {
-        throw new Error(`Stock insuffisant pour ${products[0].name} (disponible: ${products[0].stock})`);
-      }
-
-      const itemTotal = products[0].price * item.quantity;
-      total += itemTotal;
-
-      orderDetails.push({
-        product_id: products[0].id,
-        name: products[0].name,
-        quantity: item.quantity,
-        price: products[0].price
-      });
-    }
-
-    // Ajouter les frais de livraison
-    let deliveryFee = 0;
-    if (order_type === 'delivery') {
-      const [deliverySettings] = await connection.query(
-        "SELECT setting_key, setting_value FROM service_settings WHERE setting_key IN ('delivery_fee', 'delivery_min_amount')"
-      );
+    try {
+      await connection.beginTransaction();
       
-      const settings = {};
-      deliverySettings.forEach(s => {
-        settings[s.setting_key] = parseFloat(s.setting_value);
-      });
+      const { orderId, total, orderDetails, deliveryFee } = await createOrder(connection, req.body);
       
-      const minAmount = settings.delivery_min_amount || 30;
-      deliveryFee = settings.delivery_fee || 5;
-      
-      if (total < minAmount) {
-        throw new Error(`Minimum de commande ${minAmount.toFixed(2)}€ requis pour la livraison`);
-      }
-      
-      total += deliveryFee;
-    }
+      await connection.commit();
 
-    // Insertion de la commande - VERSION ORIGINALE (avec payment_status = 'paid')
-    const [orderResult] = await connection.query(
-      'INSERT INTO orders (order_type, customer_name, customer_email, customer_phone, delivery_address, delivery_date, delivery_time, total_amount, delivery_fee, notes, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      //                                                                                                                                      ^^^^^^^^^^^^^^                                                                 ^^
-      // MODIFICATION 1 : Ajouter "delivery_fee" dans la requête                                                                                                                                                           ||
-      //                                                                                                                                                                                                     MODIFICATION 2 : Ajouter un "?" de plus
-      [
-        order_type,
+      const { 
+        order_type, 
         customer_name, 
         customer_email, 
-        customer_phone, 
-        order_type === 'delivery' ? delivery_address : null,
+        customer_phone,
+        delivery_address,
         delivery_date, 
-        delivery_time, 
-        total, 
-        deliveryFee, // ← AJOUTER CETTE LIGNE
-        notes || null, 
-        'paid'
-      ]
-    );
+        delivery_time,
+        notes 
+      } = req.body;
 
-    const orderId = orderResult.insertId;
-
-    for (const item of orderDetails) {
-      await connection.query(
-        'INSERT INTO order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)',
-        [orderId, item.product_id, item.name, item.quantity, item.price]
+      const action = order_type === 'delivery' ? 'Livraison' : 'Retrait';
+      console.log(
+        `✓ Commande #${orderId} créée pour ${customer_name} ` +
+        `(${total.toFixed(2)}€) - ${action} prévu le ${delivery_date} à ${delivery_time}`
       );
 
-      await connection.query(
-        'UPDATE products SET stock = stock - ? WHERE id = ?',
-        [item.quantity, item.product_id]
+      // Email de confirmation
+      sendConfirmationEmail(
+        customer_email,
+        customer_name,
+        orderId,
+        total,
+        orderDetails,
+        delivery_date,
+        delivery_time,
+        order_type
       );
-    }
 
-    await connection.commit();
-
-    const actionText = order_type === 'delivery' ? 'Livraison' : 'Retrait';
-    console.log(`✓ Commande #${orderId} créée pour ${customer_name} (${total.toFixed(2)}€) - ${actionText} prévu le ${delivery_date} à ${delivery_time}`);
-
-    sendConfirmationEmail(customer_email, customer_name, orderId, total, orderDetails, delivery_date, delivery_time, order_type);
-
-    const { notifyAdmins } = require('../config/websocket');
-    notifyAdmins('new_order', {
-      order_id: orderId,
-      order_type,
-      customer_name,
-      total,
-      items_count: orderDetails.length,
-      delivery_date,
-      delivery_time
-    });
-
-    res.status(201).json({
-      success: true,
-      order_id: orderId,
-      order_type: order_type,
-      total: total,
-      delivery_date: delivery_date,
-      delivery_time: delivery_time,
-      message: 'Commande créée avec succès. Un email de confirmation a été envoyé.'
-    });
-
-  } catch (error) {
-    await connection.rollback();
-    next(error);
-  } finally {
-    connection.release();
-  }
-});
-
-// --- GET /api/orders/:id ---
-// --- PUT /api/orders/:id/status ---
-router.put('/:id/status', async (req, res, next) => {
-  try {
-    const pool = getPool();
-    const { status } = req.body;
-
-    const validStatuses = ['pending', 'confirmed', 'preparing', 'delivering', 'ready', 'completed', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Statut invalide' 
+      // Notification WebSocket
+      notifyAdmins('new_order', {
+        order: {
+          id: orderId,
+          order_type,
+          customer_name,
+          customer_phone,
+          customer_email,
+          total_amount: total,
+          delivery_fee: deliveryFee,
+          delivery_address: order_type === 'delivery' ? delivery_address : null,
+          delivery_date,
+          delivery_time,
+          items_count: orderDetails.length,
+          items: orderDetails,
+          notes
+        }
       });
-    }
 
-    // 🆕 Récupérer les infos de la commande AVANT la mise à jour
-    const [orders] = await pool.query(
-      'SELECT customer_email, customer_name FROM orders WHERE id = ?',
-      [req.params.id]
-    );
-
-    if (orders.length === 0) {
-      return res.status(404).json({ 
-        success: false,
-        error: 'Commande non trouvée' 
-      });
-    }
-
-    const { customer_email, customer_name } = orders[0];
-
-    // Mise à jour du statut
-    const [result] = await pool.query(
-      'UPDATE orders SET status = ? WHERE id = ?',
-      [status, req.params.id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ 
-        success: false,
-        error: 'Commande non trouvée' 
-      });
-    }
-
-    // 🆕 Envoyer l'email de notification de statut
-    const emailResult = await sendOrderStatusEmail(
-      customer_email,
-      customer_name,
-      req.params.id,
-      status
-    );
-
-    if (!emailResult.success) {
-      console.warn(`⚠️  Email de statut non envoyé pour commande #${req.params.id}:`, emailResult.error);
-    }
-
-    // Notifier via WebSocket
-    const { notifyAdmins } = require('../config/websocket');
-    notifyAdmins('order_status_updated', {
-      order_id: parseInt(req.params.id),
-      new_status: status
-    });
-
-    res.json({
-      success: true,
-      message: 'Statut mis à jour avec succès'
-    });
-
-  } catch (error) {
-    next(error);
-  }
-});
-
-// --- GET /api/admin/orders ---
-router.get('/admin/orders', async (req, res, next) => {
-  try {
-    const pool = getPool();
-    const { status, delivery_date, date_from, date_to, order_type } = req.query;
-
-    let query = `
-      SELECT 
-        o.*,
-        DATE_FORMAT(o.delivery_date, '%Y-%m-%d') as delivery_date_formatted,
-        TIME_FORMAT(o.delivery_time, '%H:%i') as delivery_time_formatted,
-        GROUP_CONCAT(CONCAT(p.name, ' x', oi.quantity) SEPARATOR ', ') as items
-      FROM orders o
-      LEFT JOIN order_items oi ON o.id = oi.order_id
-      LEFT JOIN products p ON oi.product_id = p.id
-      WHERE 1=1
-    `;
-
-    const params = [];
-
-    if (status) {
-      query += ' AND o.status = ?';
-      params.push(status);
-    }
-
-    if (order_type) {
-      query += ' AND o.order_type = ?';
-      params.push(order_type);
-    }
-
-    if (delivery_date) {
-      query += ' AND o.delivery_date = ?';
-      params.push(delivery_date);
-    }
-
-    if (date_from) {
-      query += ' AND o.delivery_date >= ?';
-      params.push(date_from);
-    }
-
-    if (date_to) {
-      query += ' AND o.delivery_date <= ?';
-      params.push(date_to);
-    }
-
-    query += ' GROUP BY o.id ORDER BY o.delivery_date ASC, o.delivery_time ASC';
-
-    const [orders] = await pool.query(query, params);
-
-    res.json({
-      success: true,
-      data: orders
-    });
-
-  } catch (error) {
-    next(error);
-  }
-});
-
-// --- PUT /api/orders/:id/status ---
-router.put('/:id/status', async (req, res, next) => {
-  try {
-    const pool = getPool();
-    const { status } = req.body;
-
-    const validStatuses = ['pending', 'confirmed', 'preparing', 'delivering', 'completed', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Statut invalide' 
-      });
-    }
-
-    const [result] = await pool.query(
-      'UPDATE orders SET status = ? WHERE id = ?',
-      [status, req.params.id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ 
-        success: false,
-        error: 'Commande non trouvée' 
-      });
-    }
-
-    const { notifyAdmins } = require('../config/websocket');
-    notifyAdmins('order_status_updated', {
-      order_id: parseInt(req.params.id),
-      new_status: status
-    });
-
-    res.json({
-      success: true,
-      message: 'Statut mis à jour'
-    });
-
-  } catch (error) {
-    next(error);
-  }
-});
-
-// --- GET /api/orders/stats/by-timeslot ---
-router.get('/stats/by-timeslot', async (req, res, next) => {
-  try {
-    const pool = getPool();
-    const { date_from, date_to, order_type } = req.query;
-
-    let query = `
-      SELECT 
-        DATE_FORMAT(delivery_date, '%Y-%m-%d') as date,
-        TIME_FORMAT(delivery_time, '%H:%i') as time_slot,
+      res.status(201).json({
+        success: true,
+        order_id: orderId,
         order_type,
-        COUNT(*) as order_count,
-        SUM(total_amount) as total_revenue
-      FROM orders
-      WHERE 1=1
-    `;
+        total,
+        delivery_date,
+        delivery_time,
+        message: 'Commande créée avec succès. Un email de confirmation a été envoyé.'
+      });
 
-    const params = [];
-
-    if (date_from) {
-      query += ' AND delivery_date >= ?';
-      params.push(date_from);
+    } catch (error) {
+      await connection.rollback();
+      next(error);
+    } finally {
+      connection.release();
     }
-
-    if (date_to) {
-      query += ' AND delivery_date <= ?';
-      params.push(date_to);
-    }
-
-    if (order_type) {
-      query += ' AND order_type = ?';
-      params.push(order_type);
-    }
-
-    query += ' GROUP BY date, time_slot, order_type ORDER BY date ASC, time_slot ASC';
-
-    const [stats] = await pool.query(query, params);
-
-    res.json({
-      success: true,
-      data: stats
-    });
-
-  } catch (error) {
-    next(error);
   }
-});
+);
 
-// ===== À AJOUTER À LA FIN de routes/orders.js =====
+/**
+ * PUT /api/orders/:id/status - Mettre à jour le statut (ADMIN ONLY)
+ */
+router.put('/:id/status', 
+  authenticateAdmin, // ⚠️ Middleware d'authentification requis
+  async (req, res, next) => {
+    try {
+      const pool = getPool();
+      const { status } = req.body;
+      const orderId = parseInt(req.params.id);
 
-// Fonction réutilisable pour créer une commande (appelée par Stripe)
+      if (!orderId || orderId <= 0) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'ID de commande invalide'
+        });
+      }
+
+      if (!VALID_STATUSES.includes(status)) {
+        return res.status(400).json({ 
+          success: false,
+          error: `Statut invalide. Valeurs autorisées: ${VALID_STATUSES.join(', ')}`
+        });
+      }
+
+      // Récupérer les infos de la commande
+      const [orders] = await pool.query(
+        'SELECT customer_email, customer_name, status as current_status FROM orders WHERE id = ?',
+        [orderId]
+      );
+
+      if (orders.length === 0) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Commande non trouvée'
+        });
+      }
+
+      const { customer_email, customer_name, current_status } = orders[0];
+
+      // Éviter les mises à jour inutiles
+      if (current_status === status) {
+        return res.json({
+          success: true,
+          message: 'Le statut est déjà à jour'
+        });
+      }
+
+      // Mise à jour du statut
+      await pool.query(
+        'UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?',
+        [status, orderId]
+      );
+
+      // Email de notification
+      const emailResult = await sendOrderStatusEmail(
+        customer_email,
+        customer_name,
+        orderId,
+        status
+      );
+
+      if (!emailResult.success) {
+        console.warn(
+          `⚠️  Email de statut non envoyé pour commande #${orderId}:`,
+          emailResult.error
+        );
+      }
+
+      // Notification WebSocket
+      notifyAdmins('order_updated', {
+        order: {
+          id: orderId,
+          status
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Statut mis à jour avec succès'
+      });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/admin/orders - Liste des commandes (ADMIN ONLY)
+ */
+router.get('/admin/orders',
+  authenticateAdmin, // ⚠️ Middleware d'authentification requis
+  async (req, res, next) => {
+    try {
+      const pool = getPool();
+      const { 
+        status, 
+        delivery_date, 
+        date_from, 
+        date_to, 
+        order_type,
+        page = 1,
+        limit = 50
+      } = req.query;
+
+      const offset = (parseInt(page) - 1) * parseInt(limit);
+
+      // Requête principale (sans GROUP_CONCAT pour la performance)
+      let query = `
+        SELECT 
+          o.id,
+          o.order_type,
+          o.customer_name,
+          o.customer_email,
+          o.customer_phone,
+          o.delivery_address,
+          DATE_FORMAT(o.delivery_date, '%Y-%m-%d') as delivery_date,
+          TIME_FORMAT(o.delivery_time, '%H:%i') as delivery_time,
+          o.total_amount,
+          o.delivery_fee,
+          o.status,
+          o.payment_status,
+          o.payment_method,
+          o.notes,
+          o.created_at,
+          COUNT(oi.id) as items_count
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        WHERE 1=1
+      `;
+
+      const params = [];
+      const countParams = [];
+
+      if (status) {
+        query += ' AND o.status = ?';
+        params.push(status);
+        countParams.push(status);
+      }
+
+      if (order_type) {
+        query += ' AND o.order_type = ?';
+        params.push(order_type);
+        countParams.push(order_type);
+      }
+
+      if (delivery_date) {
+        query += ' AND o.delivery_date = ?';
+        params.push(delivery_date);
+        countParams.push(delivery_date);
+      }
+
+      if (date_from) {
+        query += ' AND o.delivery_date >= ?';
+        params.push(date_from);
+        countParams.push(date_from);
+      }
+
+      if (date_to) {
+        query += ' AND o.delivery_date <= ?';
+        params.push(date_to);
+        countParams.push(date_to);
+      }
+
+      query += ` 
+        GROUP BY o.id 
+        ORDER BY o.delivery_date DESC, o.delivery_time DESC 
+        LIMIT ? OFFSET ?
+      `;
+      params.push(parseInt(limit), offset);
+
+      // Compter le total
+      let countQuery = query.replace(/SELECT.*FROM/s, 'SELECT COUNT(DISTINCT o.id) as total FROM');
+      countQuery = countQuery.replace(/GROUP BY.*$/s, '');
+      countQuery = countQuery.replace(/LIMIT.*$/s, '');
+
+      const [orders] = await pool.query(query, params);
+      const [[{ total }]] = await pool.query(countQuery, countParams);
+
+      res.json({
+        success: true,
+        data: orders,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/orders/stats/by-timeslot - Statistiques par créneau (ADMIN ONLY)
+ */
+router.get('/stats/by-timeslot',
+  authenticateAdmin, // ⚠️ Middleware d'authentification requis
+  async (req, res, next) => {
+    try {
+      const pool = getPool();
+      const { date_from, date_to, order_type } = req.query;
+
+      let query = `
+        SELECT 
+          DATE_FORMAT(delivery_date, '%Y-%m-%d') as date,
+          TIME_FORMAT(delivery_time, '%H:%i') as time_slot,
+          order_type,
+          COUNT(*) as order_count,
+          SUM(total_amount) as total_revenue,
+          AVG(total_amount) as avg_order_value
+        FROM orders
+        WHERE status NOT IN ('cancelled')
+      `;
+
+      const params = [];
+
+      if (date_from) {
+        query += ' AND delivery_date >= ?';
+        params.push(date_from);
+      }
+
+      if (date_to) {
+        query += ' AND delivery_date <= ?';
+        params.push(date_to);
+      }
+
+      if (order_type) {
+        query += ' AND order_type = ?';
+        params.push(order_type);
+      }
+
+      query += ' GROUP BY date, time_slot, order_type ORDER BY date ASC, time_slot ASC';
+
+      const [stats] = await pool.query(query, params);
+
+      res.json({
+        success: true,
+        data: stats
+      });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ===== FONCTION RÉUTILISABLE POUR STRIPE =====
+
 async function createOrderFromStripe(orderData) {
   const pool = getPool();
   const connection = await pool.getConnection();
@@ -428,94 +595,43 @@ async function createOrderFromStripe(orderData) {
   try {
     await connection.beginTransaction();
     
-    // (Même logique que dans POST / mais sans les validations de service)
+    const { orderId, total, orderDetails } = await createOrder(connection, {
+      ...orderData,
+      payment_status: 'paid',
+      payment_method: 'stripe'
+    });
     
-    let total = 0;
-    const orderDetails = [];
-
-    for (const item of orderData.items) {
-      const [products] = await connection.query(
-        'SELECT id, name, price, stock FROM products WHERE id = ? AND available = true',
-        [item.product_id]
-      );
-
-      if (products.length === 0) {
-        throw new Error(`Produit ${item.product_id} non disponible`);
-      }
-
-      if (products[0].stock < item.quantity) {
-        throw new Error(`Stock insuffisant pour ${products[0].name}`);
-      }
-
-      const itemTotal = products[0].price * item.quantity;
-      total += itemTotal;
-
-      orderDetails.push({
-        product_id: products[0].id,
-        name: products[0].name,
-        quantity: item.quantity,
-        price: products[0].price
-      });
-    }
-
-    let deliveryFee = 0;
-    if (orderData.order_type === 'delivery') {
-      const [deliverySettings] = await connection.query(
-        "SELECT setting_value FROM service_settings WHERE setting_key = 'delivery_fee'"
-      );
-      deliveryFee = deliverySettings[0] ? parseFloat(deliverySettings[0].setting_value) : 5;
-      total += deliveryFee;
-    }
-
-    const [orderResult] = await connection.query(
-      'INSERT INTO orders (order_type, customer_name, customer_email, customer_phone, delivery_address, delivery_date, delivery_time, total_amount, delivery_fee, notes, payment_status, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        orderData.order_type,
-        orderData.customer_name, 
-        orderData.customer_email, 
-        orderData.customer_phone, 
-        orderData.delivery_address || null,
-        orderData.delivery_date, 
-        orderData.delivery_time, 
-        total,
-        deliveryFee,
-        orderData.notes || null, 
-        orderData.payment_status || 'paid',
-        orderData.payment_method || 'card'
-      ]
-    );
-
-    const orderId = orderResult.insertId;
-
-    for (const item of orderDetails) {
-      await connection.query(
-        'INSERT INTO order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)',
-        [orderId, item.product_id, item.name, item.quantity, item.price]
-      );
-
-      await connection.query(
-        'UPDATE products SET stock = stock - ? WHERE id = ?',
-        [item.quantity, item.product_id]
-      );
-    }
-
     await connection.commit();
 
     console.log(`✓ Commande #${orderId} créée via Stripe`);
 
-    // Envoyer email
-    sendConfirmationEmail(orderData.customer_email, orderData.customer_name, orderId, total, orderDetails, orderData.delivery_date, orderData.delivery_time, orderData.order_type);
-
-    // Notifier WebSocket
-    const { notifyAdmins } = require('../config/websocket');
-    notifyAdmins('new_order', {
-      order_id: orderId,
-      order_type: orderData.order_type,
-      customer_name: orderData.customer_name,
+    // Email de confirmation
+    sendConfirmationEmail(
+      orderData.customer_email,
+      orderData.customer_name,
+      orderId,
       total,
-      items_count: orderDetails.length,
-      delivery_date: orderData.delivery_date,
-      delivery_time: orderData.delivery_time
+      orderDetails,
+      orderData.delivery_date,
+      orderData.delivery_time,
+      orderData.order_type
+    );
+
+    // Notification WebSocket
+    notifyAdmins('new_order', {
+      order: {
+        id: orderId,
+        order_type: orderData.order_type,
+        customer_name: orderData.customer_name,
+        customer_phone: orderData.customer_phone,
+        customer_email: orderData.customer_email,
+        total_amount: total,
+        delivery_address: orderData.delivery_address,
+        delivery_date: orderData.delivery_date,
+        delivery_time: orderData.delivery_time,
+        items_count: orderDetails.length,
+        payment_method: 'stripe'
+      }
     });
 
     return { orderId, total };
@@ -528,7 +644,5 @@ async function createOrderFromStripe(orderData) {
   }
 }
 
-// Exporter la fonction
-module.exports.createOrderFromStripe = createOrderFromStripe;
-
 module.exports = router;
+module.exports.createOrderFromStripe = createOrderFromStripe;

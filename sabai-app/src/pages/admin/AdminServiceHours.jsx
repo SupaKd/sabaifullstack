@@ -1,4 +1,4 @@
-// ===== src/pages/admin/AdminServiceHours.jsx ===== (VERSION CORRIGÉE)
+// ===== src/pages/admin/AdminServiceHours.jsx ===== (AVEC NOTIFICATIONS)
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -10,7 +10,8 @@ import {
   faCog 
 } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
-import api from '../../services/api'; // ✅ IMPORT API
+import api from '../../services/api';
+import useAdminNotifications from '../../hooks/useAdminNotifications'; // ✅ AJOUTÉ
 
 const AdminServiceHours = () => {
   const [hours, setHours] = useState([]);
@@ -29,11 +30,7 @@ const AdminServiceHours = () => {
 
   const daysNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  // ✅ CORRIGÉ : Utilise api.js
+  // ✅ Déclarer la fonction AVANT le hook
   const loadAllData = async () => {
     try {
       await Promise.all([
@@ -48,7 +45,15 @@ const AdminServiceHours = () => {
     }
   };
 
-  // ✅ CORRIGÉ
+  // ✅ Hook de notifications APRÈS la déclaration de la fonction
+  // Pas besoin de callback ici car les horaires ne changent pas avec les commandes
+  // Mais on veut quand même être notifié des nouvelles commandes
+  const { isConnected } = useAdminNotifications();
+
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
   const loadHours = async () => {
     try {
       const data = await api.getServiceHours();
@@ -59,7 +64,6 @@ const AdminServiceHours = () => {
     }
   };
 
-  // ✅ CORRIGÉ
   const loadClosures = async () => {
     try {
       const data = await api.getClosures();
@@ -70,7 +74,6 @@ const AdminServiceHours = () => {
     }
   };
 
-  // ✅ CORRIGÉ
   const loadSettings = async () => {
     try {
       const data = await api.getServiceSettings();
@@ -81,7 +84,6 @@ const AdminServiceHours = () => {
     }
   };
 
-  // ✅ CORRIGÉ
   const handleUpdateHours = async (dayOfWeek, updatedHours) => {
     try {
       await api.updateDayHours(dayOfWeek, updatedHours);
@@ -92,7 +94,6 @@ const AdminServiceHours = () => {
     }
   };
 
-  // ✅ CORRIGÉ
   const handleToggleDay = async (dayOfWeek, isActive) => {
     try {
       const day = hours.find(h => h.day_of_week === dayOfWeek);
@@ -111,7 +112,6 @@ const AdminServiceHours = () => {
     }
   };
 
-  // ✅ CORRIGÉ
   const handleAddClosure = async (e) => {
     e.preventDefault();
     
@@ -136,7 +136,6 @@ const AdminServiceHours = () => {
     }
   };
 
-  // ✅ CORRIGÉ
   const handleDeleteClosure = async (id) => {
     if (!confirm('Supprimer cette fermeture ?')) return;
 
@@ -149,7 +148,6 @@ const AdminServiceHours = () => {
     }
   };
 
-  // ✅ CORRIGÉ
   const handleUpdateSetting = async (key, value) => {
     try {
       await api.updateServiceSetting(key, value);
@@ -199,6 +197,13 @@ const AdminServiceHours = () => {
         <h1>
           <FontAwesomeIcon icon={faClock} /> Gestion des Horaires
         </h1>
+        
+        {/* ✅ AJOUTÉ : Indicateur de connexion */}
+        {isConnected && (
+          <span className="connection-badge connection-badge--active" style={{ marginLeft: '16px' }}>
+            🔔 Notifications actives
+          </span>
+        )}
       </div>
 
       {/* SECTION 1 : Horaires hebdomadaires */}

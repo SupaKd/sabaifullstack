@@ -1,4 +1,4 @@
-// ===== src/pages/admin/Dashboard.jsx ===== (VERSION CORRIGÉE)
+// ===== src/pages/admin/Dashboard.jsx ===== (AVEC CONTRÔLE VOLUME)
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -11,10 +11,14 @@ import {
   faTimesCircle,
   faTruck,
   faChartLine,
-  faBox
+  faBox,
+  faBell,
+  faBellSlash
 } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import useAdminNotifications from '../../hooks/useAdminNotifications';
+import NotificationSettings from '../../components/NotificationSettings'; // ✅ AJOUTÉ
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -32,10 +36,6 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
   const loadDashboardData = async () => {
     try {
       await Promise.all([
@@ -51,7 +51,20 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ CORRIGÉ
+  // ✅ Hook avec contrôles du volume
+  const { 
+    isConnected, 
+    attemptsRemaining,
+    volume,
+    setVolume,
+    soundEnabled,
+    setSoundEnabled
+  } = useAdminNotifications(loadDashboardData);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
   const loadStats = async () => {
     try {
       const data = await api.getAdminStats();
@@ -67,7 +80,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ CORRIGÉ
   const loadRecentOrders = async () => {
     try {
       const data = await api.getAdminOrders({ limit: 5 });
@@ -77,7 +89,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ CORRIGÉ
   const loadServiceStatus = async () => {
     try {
       const data = await api.getServiceSettings();
@@ -92,7 +103,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ CORRIGÉ : Toggle service
   const toggleService = async () => {
     try {
       const newStatus = !serviceStatus.isOpen;
@@ -110,7 +120,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ CORRIGÉ : Toggle delivery
   const toggleDelivery = async () => {
     try {
       const newStatus = !serviceStatus.deliveryEnabled;
@@ -154,10 +163,31 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-dashboard">
-      {/* Header avec statut du service */}
+      {/* Header avec statut du service et notifications */}
       <div className="dashboard-header">
         <div className="header-content">
           <h1>Tableau de bord</h1>
+          
+          {/* ✅ Indicateur de connexion WebSocket */}
+          <div className="notification-status">
+            <FontAwesomeIcon 
+              icon={isConnected ? faBell : faBellSlash} 
+              className={isConnected ? 'notification-active' : 'notification-inactive'}
+            />
+            <span className="notification-text">
+              {isConnected ? 'Notifications actives' : `Reconnexion (${attemptsRemaining})`}
+            </span>
+          </div>
+
+          {/* ✅ NOUVEAU : Contrôles du volume */}
+          <NotificationSettings
+            volume={volume}
+            setVolume={setVolume}
+            soundEnabled={soundEnabled}
+            setSoundEnabled={setSoundEnabled}
+            isConnected={isConnected}
+          />
+
           <div className="service-controls">
             <div className="service-toggle">
               <button

@@ -1,4 +1,4 @@
-// ===== src/services/websocket.js ===== (VERSION AMÉLIORÉE)
+// ===== src/services/websocket.js ===== (VERSION STABLE SANS HEARTBEAT)
 class WebSocketService {
   constructor() {
     this.ws = null;
@@ -8,15 +8,14 @@ class WebSocketService {
     this.isConnecting = false;
     this.shouldReconnect = true;
     
-    // ✅ NOUVEAU : Limiter les reconnexions
     this.maxReconnectAttempts = 5;
     this.reconnectAttempts = 0;
     
-    // ✅ NOUVEAU : Heartbeat pour détecter les connexions mortes
-    this.heartbeatInterval = null;
-    this.heartbeatTimeout = null;
-    this.pingInterval = 30000; // 30 secondes
-    this.pongTimeout = 5000; // 5 secondes pour répondre
+    // ⚠️ Heartbeat désactivé pour éviter les fausses déconnexions
+    // this.heartbeatInterval = null;
+    // this.heartbeatTimeout = null;
+    // this.pingInterval = 30000;
+    // this.pongTimeout = 5000;
   }
 
   connect(type, orderId = null) {
@@ -25,7 +24,6 @@ class WebSocketService {
       return;
     }
 
-    // ✅ Vérifier si on a dépassé le max de reconnexions
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('❌ Nombre maximum de tentatives de reconnexion atteint');
       this.notifyListeners({
@@ -56,7 +54,7 @@ class WebSocketService {
     this.ws.onopen = () => {
       console.log('✓ WebSocket connecté');
       this.isConnecting = false;
-      this.reconnectAttempts = 0; // ✅ Reset compteur sur connexion réussie
+      this.reconnectAttempts = 0;
       
       // Envoyer message de connexion
       if (type === 'admin') {
@@ -65,10 +63,9 @@ class WebSocketService {
         this.send({ type: 'order_connect', order_id: orderId });
       }
 
-      // ✅ Démarrer heartbeat
-      this.startHeartbeat();
+      // ⚠️ Heartbeat désactivé
+      // this.startHeartbeat();
       
-      // Notifier les listeners
       this.notifyListeners({
         type: 'notification',
         event: 'connected',
@@ -80,11 +77,11 @@ class WebSocketService {
       try {
         const data = JSON.parse(event.data);
         
-        // ✅ Gérer les pongs (réponse au ping)
-        if (data.type === 'pong') {
-          this.handlePong();
-          return;
-        }
+        // ⚠️ Pas de gestion de pong car pas de ping
+        // if (data.type === 'pong') {
+        //   this.handlePong();
+        //   return;
+        // }
         
         this.notifyListeners(data);
       } catch (error) {
@@ -95,15 +92,14 @@ class WebSocketService {
     this.ws.onerror = (error) => {
       console.error('Erreur WebSocket:', error);
       this.isConnecting = false;
-      this.stopHeartbeat();
+      // this.stopHeartbeat();
     };
 
     this.ws.onclose = (event) => {
       console.log('WebSocket déconnecté', event.code, event.reason);
       this.isConnecting = false;
-      this.stopHeartbeat();
+      // this.stopHeartbeat();
       
-      // ✅ Incrémenter le compteur de reconnexions
       this.reconnectAttempts++;
       
       if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -119,34 +115,30 @@ class WebSocketService {
     };
   }
 
-  // ✅ NOUVEAU : Démarrer heartbeat
+  // ⚠️ Heartbeat désactivé - Ces fonctions ne sont plus utilisées
+  /*
   startHeartbeat() {
-    this.stopHeartbeat(); // Clear tout heartbeat existant
+    this.stopHeartbeat();
     
     this.heartbeatInterval = setInterval(() => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        // Envoyer ping
         this.send({ type: 'ping' });
         
-        // Attendre pong pendant 5 secondes
         this.heartbeatTimeout = setTimeout(() => {
           console.warn('⚠️ Pas de pong reçu, connexion probablement morte');
-          this.ws.close(); // Force reconnexion
+          this.ws.close();
         }, this.pongTimeout);
       }
     }, this.pingInterval);
   }
 
-  // ✅ NOUVEAU : Gérer réception du pong
   handlePong() {
-    // Clear le timeout de pong
     if (this.heartbeatTimeout) {
       clearTimeout(this.heartbeatTimeout);
       this.heartbeatTimeout = null;
     }
   }
 
-  // ✅ NOUVEAU : Arrêter heartbeat
   stopHeartbeat() {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
@@ -158,14 +150,14 @@ class WebSocketService {
       this.heartbeatTimeout = null;
     }
   }
+  */
 
   reconnect(type, orderId) {
     if (this.reconnectTimeout || !this.shouldReconnect) return;
     
-    // ✅ Backoff exponentiel : augmenter le délai à chaque tentative
     const delay = Math.min(
       this.reconnectInterval * Math.pow(1.5, this.reconnectAttempts - 1),
-      30000 // Max 30 secondes
+      30000
     );
     
     console.log(`Reconnexion dans ${Math.round(delay / 1000)}s (tentative ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
@@ -217,7 +209,6 @@ class WebSocketService {
     }
   }
 
-  // ✅ NOUVEAU : Méthode pour reset les reconnexions
   resetReconnectAttempts() {
     this.reconnectAttempts = 0;
   }
@@ -230,7 +221,7 @@ class WebSocketService {
       this.reconnectTimeout = null;
     }
     
-    this.stopHeartbeat();
+    // this.stopHeartbeat();
     
     if (this.ws) {
       this.ws.close();
@@ -242,12 +233,10 @@ class WebSocketService {
     this.reconnectAttempts = 0;
   }
 
-  // ✅ NOUVEAU : Getter pour connaître l'état de connexion
   get isConnected() {
     return this.ws && this.ws.readyState === WebSocket.OPEN;
   }
 
-  // ✅ NOUVEAU : Getter pour connaître le nombre de tentatives
   get attemptsRemaining() {
     return Math.max(0, this.maxReconnectAttempts - this.reconnectAttempts);
   }

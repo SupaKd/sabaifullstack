@@ -1,91 +1,99 @@
 // ===== src/pages/admin/Login.jsx ===== (VERSION CORRIGÉE)
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext'; // ✅ Importer useAuth
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import api from "../../services/api";
 
-const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+const AdminLogin = () => {
+  const [credentials, setCredentials] = useState({
+    username: "",
+    password: "",
+  });
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const { login } = useAuth(); // ✅ Utiliser le contexte
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!username || !password) {
-      toast.error('Veuillez remplir tous les champs');
-      return;
-    }
-
     setLoading(true);
+    setError(null);
 
     try {
-      // ✅ Appeler login() depuis le contexte
-      const result = await login(username, password);
+      const response = await api.adminLogin(credentials);
 
-      if (result.success) {
-        toast.success('Connexion réussie !');
-        navigate('/admin');
-      } else {
-        toast.error(result.error || 'Identifiants incorrects');
+      // ✅ CORRECTION : Passer le token ET l'utilisateur
+      if (!response.token) {
+        throw new Error("Token manquant dans la réponse du serveur");
       }
-    } catch (error) {
-      console.error('Erreur de connexion:', error);
-      toast.error('Erreur de connexion');
+
+      login(response.user, response.token); // ← AJOUT DU TOKEN
+
+      console.log("✓ Connexion réussie, token stocké");
+      navigate("/admin");
+    } catch (err) {
+      console.error("Erreur de connexion:", err);
+      setError(err.message || "Erreur de connexion");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-card">
-          <h1 className="login-title">Administration</h1>
-          <p className="login-subtitle">Connexion requise</p>
-
-          <form onSubmit={handleSubmit} className="login-form">
-            <div className="form-group">
-              <label htmlFor="username">Nom d'utilisateur</label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Entrez votre nom d'utilisateur"
-                disabled={loading}
-                autoComplete="username"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password">Mot de passe</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Entrez votre mot de passe"
-                disabled={loading}
-                autoComplete="current-password"
-              />
-            </div>
-
-            <button 
-              type="submit" 
-              className="login-button"
-              disabled={loading}
-            >
-              {loading ? 'Connexion...' : 'Se connecter'}
-            </button>
-          </form>
+    <div className="admin-login">
+      <div className="admin-login__card">
+        <div className="admin-login__header">
+          <img
+            src="/images/logosabai.png"
+            alt="logo"
+            className="admin-login__icon"
+          />
         </div>
+
+        {error && <div className="error">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="admin-login__form">
+          <div className="form-field">
+            <label className="form-field__label">Nom d'utilisateur</label>
+            <input
+              type="text"
+              value={credentials.username}
+              onChange={(e) =>
+                setCredentials({ ...credentials, username: e.target.value })
+              }
+              className="form-field__input"
+              placeholder="admin"
+              required
+              autoComplete="username"
+            />
+          </div>
+
+          <div className="form-field">
+            <label className="form-field__label">Mot de passe</label>
+            <input
+              type="password"
+              value={credentials.password}
+              onChange={(e) =>
+                setCredentials({ ...credentials, password: e.target.value })
+              }
+              className="form-field__input"
+              placeholder="••••••••"
+              required
+              autoComplete="current-password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn--primary btn--large btn--full-width admin-login__submit"
+          >
+            {loading ? "Connexion..." : "Se connecter"}
+          </button>
+        </form>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default AdminLogin;
