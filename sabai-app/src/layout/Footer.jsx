@@ -66,12 +66,12 @@ function Footer() {
             <h4 className="footer__title">Suivez-nous</h4>
 
             <div className="footer__social">
-              <a href="#" className="footer__social-link" aria-label="Facebook">
+              <a href="https://www.facebook.com/people/Sabai/100064120840653/#" className="footer__social-link" aria-label="Facebook">
                 <FontAwesomeIcon icon={faFacebookF} />
               </a>
 
               <a
-                href="#"
+                href="https://www.instagram.com/restaurantlesabai/?hl=fr"
                 className="footer__social-link"
                 aria-label="Instagram"
               >
@@ -96,13 +96,14 @@ function Footer() {
               <a href="https://supaco-digital.com" className="supaco">Supaco</a>
             </p>
 
-            <div className="footer__legal">
+           {/* <div className="footer__legal">
               <Link to="/mention">Mentions légales</Link>
               <span>•</span>
               <Link to="/politique">Politique de confidentialité</Link>
               <span>•</span>
               <Link to="/cgv">CGV</Link>
             </div>
+            */}
           </div>
         </div>
       </div>

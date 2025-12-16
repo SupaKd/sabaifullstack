@@ -12,9 +12,10 @@ function Hero() {
             loop
             muted
             playsInline
-            preload="auto"
+            preload="metadata"
             onCanPlayThrough={() => setReady(true)}
           >
+            <source src="/video/bamboo.webm" type="video/webm" />
             <source src="/video/bamboo.mp4" type="video/mp4" />
           </video>
         </div>
@@ -29,7 +30,8 @@ function Hero() {
           </div>
 
           <p className="home__hero-subtitle">
-            Des plats authentiques préparés avec passion, pour un voyage culinaire unique.
+            Des plats authentiques préparés avec passion, pour un voyage
+            culinaire unique.
           </p>
 
           <a href="#menu" className="hero__cta">
