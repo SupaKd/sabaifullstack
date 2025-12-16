@@ -17,21 +17,22 @@ const JWT_EXPIRES_IN = '8h'; // Token valide 8 heures
 router.post('/login', async (req, res, next) => {
   try {
     const pool = getPool();
-    const { username, password } = req.body;
+    const { email, password } = req.body; // ✅ Changé de username à email
 
     console.log('=== TENTATIVE DE CONNEXION ===');
+    console.log('Email:', email); // ✅ Debug
 
-    if (!username || !password) {
+    if (!email || !password) {
       return res.status(400).json({ 
         success: false,
-        error: 'Username et password requis' 
+        error: 'Email et password requis' 
       });
     }
 
-    // Cherche l'utilisateur admin
+    // Cherche l'utilisateur admin par email
     const [users] = await pool.query(
-      'SELECT * FROM admin_users WHERE username = ?',
-      [username]
+      'SELECT * FROM admin_users WHERE email = ?', // ✅ Changé de username à email
+      [email]
     );
 
     if (users.length === 0) {
@@ -55,19 +56,19 @@ router.post('/login', async (req, res, next) => {
     const token = jwt.sign(
       { 
         id: users[0].id, 
-        username: users[0].username,
+        email: users[0].email, // ✅ Changé
         role: 'admin'
       },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
 
-    // ✅ NOUVEAU : Stocker le token dans un cookie httpOnly
+    // Stocker le token dans un cookie httpOnly
     res.cookie('admin_token', token, {
-      httpOnly: true,                                  // ← Inaccessible en JavaScript
-      secure: process.env.NODE_ENV === 'production',   // ← HTTPS only en production
-      sameSite: 'strict',                              // ← Protection CSRF
-      maxAge: 8 * 60 * 60 * 1000                       // ← 8 heures en millisecondes
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax', // ✅ Changé de 'strict' à 'lax' pour éviter problèmes CORS
+      maxAge: 8 * 60 * 60 * 1000
     });
 
     // Mise à jour last_login
@@ -76,20 +77,19 @@ router.post('/login', async (req, res, next) => {
       [users[0].id]
     );
 
-    console.log(`✓ Connexion réussie pour ${username} (cookie httpOnly)`);
+    console.log(`✓ Connexion réussie pour ${email} (cookie httpOnly)`);
 
-    // ✅ NE PLUS envoyer le token dans le JSON
     res.json({
       success: true,
       message: 'Connexion réussie',
       user: { 
         id: users[0].id, 
-        username: users[0].username 
+        email: users[0].email // ✅ Changé
       }
-      // ❌ token: token  ← SUPPRIMÉ (token maintenant dans cookie)
     });
 
   } catch (error) {
+    console.error('❌ Erreur login:', error);
     next(error);
   }
 });

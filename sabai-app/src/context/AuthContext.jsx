@@ -1,83 +1,88 @@
-// ===== src/context/AuthContext.jsx ===== (VERSION AMÉLIORÉE)
-import { createContext, useContext, useState } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth doit être utilisé dans AuthProvider');
-  }
-  return context;
-};
+// Utiliser la variable d'environnement
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const AuthProvider = ({ children }) => {
-  // ✨ NOUVEAU : Stocker le token ET l'utilisateur
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('admin_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem('admin_token') || null;
-  });
+  // Configuration axios avec l'URL depuis .env
+  axios.defaults.baseURL = API_URL;
+  axios.defaults.withCredentials = true;
 
-  // ✨ Login avec token JWT
-  const login = (userData, authToken) => {
-    setUser(userData);
-    setToken(authToken);
-    localStorage.setItem('admin_user', JSON.stringify(userData));
-    localStorage.setItem('admin_token', authToken);
-  };
-
-  // ✨ Logout amélioré
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('admin_user');
-    localStorage.removeItem('admin_token');
-  };
-
-  // ✨ Vérifier si le token est expiré (optionnel mais recommandé)
-  const isTokenValid = () => {
-    if (!token) return false;
-    
+  const checkSession = async () => {
     try {
-      // Décoder le JWT (partie payload)
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const expirationTime = payload.exp * 1000; // Convertir en ms
+      console.log(`🔍 Checking session on: ${API_URL}/api/admin/verify`);
+      const response = await axios.get('/api/admin/verify');
       
-      // Vérifier si expiré
-      if (Date.now() >= expirationTime) {
-        logout(); // Auto-logout si expiré
-        return false;
+      if (response.data.user) {
+        setUser(response.data.user);
       }
-      
-      return true;
     } catch (error) {
-      console.error('Erreur validation token:', error);
-      return false;
+      console.error('Session check failed:', error.message);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const isAuthenticated = () => {
-    return !!user && !!token && isTokenValid();
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  const login = async (email, password) => {
+    try {
+      console.log(`🔐 Login attempt on: ${API_URL}/api/admin/login`);
+      const response = await axios.post('/api/admin/login', {
+        email,
+        password
+      });
+
+      if (response.data.user) {
+        setUser(response.data.user);
+        return { success: true };
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Erreur de connexion' 
+      };
+    }
   };
 
-  // ✨ NOUVEAU : Helper pour récupérer le token
-  const getToken = () => token;
+  const logout = async () => {
+    try {
+      await axios.post('/api/admin/logout');
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+      setUser(null);
+    }
+  };
 
   return (
     <AuthContext.Provider value={{ 
       user, 
-      token,
+      loading, 
       login, 
       logout, 
-      isAuthenticated,
-      getToken,
-      isTokenValid
+      checkSession,
+      apiUrl: API_URL
     }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
 };

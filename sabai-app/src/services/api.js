@@ -1,4 +1,4 @@
-// ===== src/services/api.js ===== (CORRECTION)
+// ===== src/services/api.js ===== (VERSION COOKIES)
 import API_CONFIG from './api.config';
 
 class APIService {
@@ -7,12 +7,11 @@ class APIService {
   }
 
   async request(endpoint, options = {}) {
-    // ✅ CORRECTION : Utiliser API_CONFIG.url() au lieu de this.baseURL
-    const url = API_CONFIG.url(endpoint); // ← ICI LA CORRECTION
+    const url = API_CONFIG.url(endpoint);
     
     const config = {
       ...options,
-      credentials: 'include',
+      credentials: 'include', // ✅ TOUJOURS inclure les cookies
       headers: {
         'Content-Type': 'application/json',
         ...options.headers
@@ -24,8 +23,10 @@ class APIService {
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 401 && data.code === 'TOKEN_EXPIRED') {
-          console.warn('Session expirée');
+        // Session expirée - rediriger vers login
+        if (response.status === 401 && (data.code === 'TOKEN_EXPIRED' || data.code === 'NO_TOKEN')) {
+          console.warn('Session expirée, redirection vers login...');
+          localStorage.removeItem('admin_user');
           window.location.href = '/admin/login';
           throw new Error('Session expirée');
         }
@@ -63,7 +64,39 @@ class APIService {
     });
   }
 
-  // ========== MÉTHODES ADMIN (nécessitent authentification) ==========
+  // ========== MÉTHODES ADMIN ==========
+
+  // ✅ Login (ne retourne plus le token, il est dans le cookie)
+  async adminLogin(credentials) {
+    const response = await fetch(API_CONFIG.url('/admin/login'), {
+      method: 'POST',
+      credentials: 'include', // ← Important
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(credentials)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erreur de connexion');
+    }
+
+    return data; // { success: true, user: {...} }
+  }
+
+  // ✅ Logout
+  async adminLogout() {
+    return this.request('/admin/logout', {
+      method: 'POST'
+    });
+  }
+
+  // ✅ Vérifier la session
+  async verifySession() {
+    return this.request('/admin/verify');
+  }
 
   async getAdminOrders(filters = {}) {
     const queryString = new URLSearchParams(filters).toString();
@@ -119,12 +152,11 @@ class APIService {
     });
   }
 
-  // ✅ Upload image (FormData, pas JSON)
   async uploadProductImage(id, file) {
     const formData = new FormData();
     formData.append('image', file);
 
-    const url = `${this.baseURL}/admin/products/${id}/image`;
+    const url = API_CONFIG.url(`/admin/products/${id}/image`);
 
     try {
       const response = await fetch(url, {

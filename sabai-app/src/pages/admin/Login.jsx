@@ -1,17 +1,16 @@
-// ===== src/pages/admin/Login.jsx ===== (VERSION CORRIGÉE)
+// ===== src/pages/admin/Login.jsx ===== (VERSION COOKIES)
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import api from "../../services/api";
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({
-    username: "",
+    email: "", // ✅ Changé de username à email
     password: "",
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login } = useAuth(); // ✅ Utiliser la fonction login du contexte
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -20,17 +19,16 @@ const AdminLogin = () => {
     setError(null);
 
     try {
-      const response = await api.adminLogin(credentials);
+      // ✅ Utiliser la fonction login du AuthContext (qui utilise l'URL dynamique)
+      const result = await login(credentials.email, credentials.password);
 
-      // ✅ CORRECTION : Passer le token ET l'utilisateur
-      if (!response.token) {
-        throw new Error("Token manquant dans la réponse du serveur");
+      if (result.success) {
+        console.log('✓ Connexion réussie');
+        navigate("/admin");
+      } else {
+        throw new Error(result.message || 'Erreur de connexion');
       }
 
-      login(response.user, response.token); // ← AJOUT DU TOKEN
-
-      console.log("✓ Connexion réussie, token stocké");
-      navigate("/admin");
     } catch (err) {
       console.error("Erreur de connexion:", err);
       setError(err.message || "Erreur de connexion");
@@ -54,17 +52,17 @@ const AdminLogin = () => {
 
         <form onSubmit={handleSubmit} className="admin-login__form">
           <div className="form-field">
-            <label className="form-field__label">Nom d'utilisateur</label>
+            <label className="form-field__label">Email</label>
             <input
-              type="text"
-              value={credentials.username}
+              type="email"
+              value={credentials.email}
               onChange={(e) =>
-                setCredentials({ ...credentials, username: e.target.value })
+                setCredentials({ ...credentials, email: e.target.value })
               }
               className="form-field__input"
-              placeholder="admin"
+              placeholder="admin@sabai.com"
               required
-              autoComplete="username"
+              autoComplete="email"
             />
           </div>
 

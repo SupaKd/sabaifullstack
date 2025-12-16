@@ -1,18 +1,19 @@
-// ===== middleware/auth.js =====
+// ===== middleware/auth.js ===== (VERSION COOKIES)
 const jwt = require('jsonwebtoken');
 
 /**
  * Middleware d'authentification JWT
- * Vérifie le token dans le header Authorization
+ * Vérifie le token dans les cookies httpOnly
  */
 function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer TOKEN"
+  // ✅ Lire le token depuis le cookie au lieu du header
+  const token = req.cookies.admin_token;
 
   if (!token) {
     return res.status(401).json({ 
       success: false,
-      error: 'Token d\'authentification manquant' 
+      error: 'Token d\'authentification manquant',
+      code: 'NO_TOKEN'
     });
   }
 
@@ -21,9 +22,20 @@ function authenticateToken(req, res, next) {
     req.user = decoded; // Ajoute les infos user à la requête
     next();
   } catch (error) {
+    // Token expiré
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        success: false,
+        error: 'Session expirée',
+        code: 'TOKEN_EXPIRED'
+      });
+    }
+    
+    // Token invalide
     return res.status(403).json({ 
       success: false,
-      error: 'Token invalide ou expiré' 
+      error: 'Token invalide',
+      code: 'INVALID_TOKEN'
     });
   }
 }

@@ -1,4 +1,4 @@
-// ===== routes/orders.js ===== (VERSION OPTIMISÉE)
+// ===== routes/orders.js ===== (VERSION OPTIMISÉE - CORRIGÉE)
 const express = require('express');
 const router = express.Router();
 const { getPool } = require('../config/database');
@@ -7,7 +7,7 @@ const { validateOrder } = require('../middleware/validation');
 const rateLimiter = require('../middleware/rateLimiter');
 const { checkServiceAvailability } = require('../middleware/checkServiceAvailability');
 const { notifyAdmins } = require('../config/websocket');
-const { authenticateAdmin } = require('../middleware/auth'); // ⚠️ À créer
+const { authenticateToken, requireAdmin } = require('../middleware/auth'); // ✅ CORRIGÉ
 
 // ===== CONSTANTES =====
 const VALID_ORDER_TYPES = ['delivery', 'takeaway'];
@@ -339,7 +339,8 @@ router.post('/',
  * PUT /api/orders/:id/status - Mettre à jour le statut (ADMIN ONLY)
  */
 router.put('/:id/status', 
-  authenticateAdmin, // ⚠️ Middleware d'authentification requis
+  authenticateToken,  // ✅ CORRIGÉ
+  requireAdmin,       // ✅ CORRIGÉ
   async (req, res, next) => {
     try {
       const pool = getPool();
@@ -427,7 +428,8 @@ router.put('/:id/status',
  * GET /api/admin/orders - Liste des commandes (ADMIN ONLY)
  */
 router.get('/admin/orders',
-  authenticateAdmin, // ⚠️ Middleware d'authentification requis
+  authenticateToken,  // ✅ CORRIGÉ
+  requireAdmin,       // ✅ CORRIGÉ
   async (req, res, next) => {
     try {
       const pool = getPool();
@@ -536,7 +538,8 @@ router.get('/admin/orders',
  * GET /api/orders/stats/by-timeslot - Statistiques par créneau (ADMIN ONLY)
  */
 router.get('/stats/by-timeslot',
-  authenticateAdmin, // ⚠️ Middleware d'authentification requis
+  authenticateToken,  // ✅ CORRIGÉ
+  requireAdmin,       // ✅ CORRIGÉ
   async (req, res, next) => {
     try {
       const pool = getPool();
