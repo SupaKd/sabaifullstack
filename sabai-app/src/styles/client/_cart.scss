@@ -4,7 +4,6 @@
 .container__cart {
   width: 100%;
   padding: 1rem;
-  margin-top: 4rem;
   min-height: calc(100vh - 4rem);
   background: linear-gradient(160deg, $primary-light, lighten($success, 45%));
 }
@@ -20,7 +19,7 @@
   background: $primary-light;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  margin-top: 3rem;
+  margin-top: 5rem;
 
   &__icon {
     font-size: 4rem;
@@ -58,6 +57,7 @@
     gap: 1rem;
     padding: 1rem;
     border-radius: 12px;
+    margin-top: 4rem;
   }
 
   &__header-left,
@@ -387,7 +387,6 @@
 @media (min-width: 768px) {
   .container__cart {
     padding: 1.5rem;
-    margin-top: 5rem;
   }
 
   .cart {

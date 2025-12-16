@@ -54,7 +54,7 @@
   margin-bottom: $spacing-sm;
 
   .hero__logo {
-    width: clamp(250px, 35vw, 200px);
+    width: clamp(260px, 35vw, 200px);
     filter: drop-shadow($shadow-xl);
     animation: fadeInDown $transition-slow forwards;
   }
@@ -64,7 +64,7 @@
 
 .home__hero-subtitle {
   color: rgba(255, 255, 255, 0.95); // meilleur contraste sur fond vert
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: $spacing-lg;
 
@@ -100,6 +100,16 @@
     
   }
 }
+
+.hero__video {
+  opacity: 0;
+}
+
+.hero__video.ready {
+  opacity: 1;
+}
+
+
 
 /* ============================
    Responsive

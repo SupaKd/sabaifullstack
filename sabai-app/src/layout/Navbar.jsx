@@ -4,16 +4,13 @@ import { useCart } from "../context/CartContext";
 
 // FontAwesome
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBasketShopping,
-  faPhoneFlip,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBasketShopping } from "@fortawesome/free-solid-svg-icons";
+import { faInstagram } from "@fortawesome/free-brands-svg-icons";
 
 function Navbar() {
   const { getItemCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
@@ -21,15 +18,21 @@ function Navbar() {
       <div className="navbar__container">
         {/* Logo */}
         <Link to="/" className="navbar__logo" onClick={closeMenu}>
-          <img src="/images/logosabai.png" alt="logo" />
+          <img src="/images/logonoel.png" alt="logo" />
         </Link>
 
-        {/* Actions : Panier + Burger */}
+        {/* Actions */}
         <div className="navbar__actions">
           <div className="navbar__right">
-          <a href="tel:+33678357198" className="navbar__cart-link">
-          <FontAwesomeIcon icon={faPhoneFlip} />
-        </a>
+            <a
+              href="https://www.instagram.com/restaurantlesabai/?hl=fr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="navbar__instagram"
+            >
+              <FontAwesomeIcon icon={faInstagram} />
+            </a>
+
             <Link to="/cart" className="navbar__cart-link">
               <FontAwesomeIcon
                 icon={faBasketShopping}
@@ -42,7 +45,6 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Fond noir clickable quand menu ouvert */}
         {isMenuOpen && (
           <div className="navbar__overlay" onClick={closeMenu}></div>
         )}

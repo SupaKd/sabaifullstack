@@ -41,7 +41,7 @@ function Footer() {
               </div>
               <div className="footer__contact-item">
                 <FontAwesomeIcon icon={faEnvelope} className="footer__icon" />
-                <span>contact@sabai-restaurant.com</span>
+                <span>contact@sabai-thoiry.com</span>
               </div>
             </div>
           </div>

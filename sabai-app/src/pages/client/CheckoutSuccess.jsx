@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import API_CONFIG from '../../services/api.config';
 
 const CheckoutSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -15,7 +16,7 @@ const CheckoutSuccess = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let isMounted = true; // ✅ Empêche les updates après unmount
+    let isMounted = true;
 
     const verifyPayment = async () => {
       const sessionId = searchParams.get('session_id');
@@ -29,7 +30,7 @@ const CheckoutSuccess = () => {
       }
 
       try {
-        const response = await fetch('http://145.223.34.3/api/payment/verify-payment', {
+        const response = await fetch(`${API_CONFIG.PAYMENT}/verify-payment`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id: sessionId })
@@ -37,11 +38,11 @@ const CheckoutSuccess = () => {
 
         const data = await response.json();
 
-        if (!isMounted) return; // ✅ Arrêter si le composant est démonté
+        if (!isMounted) return;
 
         if (data.success) {
           setOrderId(data.order_id);
-          clearCart(); // ✅ Appeler clearCart seulement en cas de succès
+          clearCart();
           setLoading(false);
         } else {
           throw new Error(data.error || 'Erreur lors de la vérification du paiement');
@@ -58,10 +59,9 @@ const CheckoutSuccess = () => {
     verifyPayment();
 
     return () => {
-      isMounted = false; // ✅ Cleanup pour éviter les memory leaks
+      isMounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // ✅ SEULEMENT searchParams - PAS clearCart !
+  }, [searchParams, clearCart]);
 
   if (loading) {
     return (

@@ -4,6 +4,8 @@ import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { ServiceStatusProvider } from './context/ServiceStatusContext';
 import { Toaster } from "react-hot-toast";
+import ScrollToTop from "./components/ScrollToTop";
+
 
 // Client pages
 import Home from './pages/client/Home';
@@ -36,6 +38,7 @@ function App() {
         <ServiceStatusProvider>
           <Toaster position="bottom-right" />
           <Router>
+          <ScrollToTop />
             <div className="app">
 
               <Routes>
