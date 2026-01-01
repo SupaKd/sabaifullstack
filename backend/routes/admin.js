@@ -64,13 +64,14 @@ router.post('/login', async (req, res, next) => {
       { expiresIn: JWT_EXPIRES_IN }
     );
 
-    // Stocker le token dans un cookie httpOnly
-    res.cookie('admin_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', // ✅ Changé de 'strict' à 'lax' pour éviter problèmes CORS
-      maxAge: 8 * 60 * 60 * 1000
-    });
+// Stocker le token dans un cookie httpOnly
+res.cookie('admin_token', token, {
+  httpOnly: true,
+  secure: true, // ✅ Force HTTPS
+  sameSite: 'none', // ✅ IMPORTANT : Permet les cookies cross-domain
+  domain: '.sabai-thoiry.com', // ✅ Partage le cookie entre sabai-thoiry.com et api.sabai-thoiry.com
+  maxAge: 8 * 60 * 60 * 1000
+});
 
     // Mise à jour last_login
     await pool.query(
@@ -101,10 +102,11 @@ router.post('/login', async (req, res, next) => {
 router.post('/logout', authenticateToken, (req, res) => {
   // ✅ Supprimer le cookie
   res.clearCookie('admin_token', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
-  });
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  domain: '.sabai-thoiry.com'
+});
   
   console.log(`✓ Déconnexion admin ${req.user.username}`);
   
