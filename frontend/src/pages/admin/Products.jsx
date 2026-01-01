@@ -1,4 +1,4 @@
-// ===== src/pages/admin/Products.jsx ===== (OPTIMISÉ TABLETTE)
+// ===== src/pages/admin/Products.jsx ===== (CORRIGÉ - SANS IMPORT INUTILISÉ)
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -19,6 +19,7 @@ import toast from 'react-hot-toast';
 import api from '../../services/api';
 import API_CONFIG from '../../services/api.config';
 import useAdminNotifications from '../../hooks/useAdminNotifications';
+// ✅ SUPPRIMÉ: import { useAuth } from '../../context/AuthContext'; (non utilisé)
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -365,7 +366,7 @@ const AdminProducts = () => {
                       onClick={() => handleDeleteProduct(product.id)}
                     >
                       <FontAwesomeIcon icon={faTrash} />
-                      <span>{isDeleting}</span>
+                      <span>{isDeleting ? 'Confirmer' : ''}</span>
                     </button>
                   </div>
                 </div>

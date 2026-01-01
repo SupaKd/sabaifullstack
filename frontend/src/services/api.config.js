@@ -13,20 +13,27 @@ export const API_CONFIG = {
   PAYMENT: `${API_BASE_URL}/api/payment`,
   ADMIN: `${API_BASE_URL}/api/admin`,
 
-  // ✅ Helper pour construire des URLs (AJOUTE /api)
+  // ✅ Helper pour construire des URLs (CORRIGÉ - évite double /api)
   url: (path) => {
+    // Si le path commence déjà par /api, ne pas l'ajouter
+    if (path.startsWith('/api')) {
+      return `${API_BASE_URL}${path}`;
+    }
     // Si le path commence par /, ajouter /api
     if (path.startsWith('/')) {
       return `${API_BASE_URL}/api${path}`;
     }
+    // Sinon, ajouter /api/
     return `${API_BASE_URL}/api/${path}`;
   },
 
-  // Helper pour les images (pas de /api pour les images)
+  // Helper pour les images (pas de /api pour les images statiques)
   imageUrl: (path) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    return `${API_BASE_URL}${path}`;
+    // Assurer que le path commence par /
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${API_BASE_URL}${cleanPath}`;
   }
 };
 

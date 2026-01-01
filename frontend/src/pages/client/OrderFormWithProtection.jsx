@@ -1,6 +1,7 @@
+// ===== src/pages/client/OrderFormWithProtection.jsx ===== (CORRIGÉ)
 import React, { useState } from 'react';
-import ServiceStatus from './ServiceStatus';
-import API_CONFIG from '../config/api.config';
+import ServiceStatus from '../../components/ServiceStatus';
+import API_CONFIG from '../../services/api.config'; // ✅ Chemin corrigé
 
 const OrderFormWithProtection = () => {
   const [serviceOpen, setServiceOpen] = useState(false);
@@ -26,8 +27,9 @@ const OrderFormWithProtection = () => {
     }
 
     try {
-      const response = await fetch(API_CONFIG.url('/api/orders'), {
+      const response = await fetch(API_CONFIG.url('/orders'), {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

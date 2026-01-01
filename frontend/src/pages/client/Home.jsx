@@ -1,13 +1,17 @@
+// ===== src/pages/client/Home.jsx ===== (VERSION OPTIMISÉE)
 import { useState, useEffect, useRef } from "react";
 import api from "../../services/api";
 import ProductCard from "../../components/ProductCard";
 import Hero from "../../components/Hero";
 import ServiceStatus from "../../components/ServiceStatus";
 
+// ✅ Constante hors du composant (évite recréation à chaque render)
+const CATEGORY_ORDER = ["SUSHI", "BOWL", "BAO", "SPRING", "MINI-BOWL", "TAPAS", "BOISSONS", "AUTRES"];
+
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [activeCategory, setActiveCategory] = useState(null); // ✅ Catégorie active basée sur le scroll
+  const [activeCategory, setActiveCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,18 +27,17 @@ const Home = () => {
   useEffect(() => {
     const observerOptions = {
       root: null,
-      rootMargin: "-140px 0px -60% 0px", // Zone de détection centrée
-      threshold: [0, 0.1, 0.25, 0.5, 0.75, 1], // Multiples seuils
+      rootMargin: "-140px 0px -60% 0px",
+      threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
     };
 
-    let intersectingEntries = new Map();
+    const intersectingEntries = new Map();
 
     observerRef.current = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         const category = entry.target.dataset.category;
         
         if (entry.isIntersecting) {
-          // Stocker avec ratio et position
           intersectingEntries.set(category, {
             ratio: entry.intersectionRatio,
             top: entry.boundingClientRect.top,
@@ -44,13 +47,11 @@ const Home = () => {
         }
       });
 
-      // Trouver la catégorie la plus proche du haut avec le meilleur ratio
       if (intersectingEntries.size > 0) {
         let bestCategory = null;
         let bestScore = -Infinity;
 
         intersectingEntries.forEach((data, category) => {
-          // Score = ratio élevé ET position proche du haut
           const score = data.ratio * 100 - Math.abs(data.top);
           
           if (score > bestScore) {
@@ -78,7 +79,7 @@ const Home = () => {
     };
   }, [products]);
 
-  // Chargement initial de TOUTES les données
+  // Chargement initial
   const loadInitialData = async () => {
     try {
       setLoading(true);
@@ -112,16 +113,15 @@ const Home = () => {
     }
   };
 
-  // ✅ Scroll vers une catégorie spécifique avec scrollIntoView
+  // ✅ Scroll vers une catégorie spécifique
   const scrollToCategory = (category) => {
-    // Mettre à jour immédiatement la catégorie active
     setActiveCategory(category);
     
     const element = categoryRefs.current[category];
     if (element) {
       element.scrollIntoView({
         behavior: "smooth",
-        block: "start", // Aligne le haut de l'élément avec le haut du viewport
+        block: "start",
       });
     }
   };
@@ -141,17 +141,13 @@ const Home = () => {
     return grouped;
   };
 
-  const getCategoryOrder = () => {
-    return ["SUSHI", "BOWL", "BAO", "SPRING", "MINI-BOWL", "TAPAS", "BOISSONS", "AUTRES"];
-  };
-
+  // ✅ Trier les catégories selon l'ordre défini
   const getSortedCategories = () => {
-    const order = getCategoryOrder();
     const uniqueCategories = [...new Set(categories.map((cat) => cat.toUpperCase()))];
 
     return uniqueCategories.sort((a, b) => {
-      const indexA = order.indexOf(a);
-      const indexB = order.indexOf(b);
+      const indexA = CATEGORY_ORDER.indexOf(a);
+      const indexB = CATEGORY_ORDER.indexOf(b);
 
       if (indexA === -1) return 1;
       if (indexB === -1) return -1;
@@ -208,8 +204,6 @@ const Home = () => {
 
         {/* ✅ Filtres avec Scroll Spy */}
         <div className="home__filters">
-          
-
           {getSortedCategories().map((cat) => {
             const count = getProductCountByCategory(cat);
             if (count === 0) return null;
@@ -231,7 +225,7 @@ const Home = () => {
         {/* ✅ Affichage par catégories avec refs pour Scroll Spy */}
         <div className="home__results">
           {Object.keys(groupedProducts).length > 0 ? (
-            getCategoryOrder()
+            CATEGORY_ORDER
               .filter((cat) => groupedProducts[cat])
               .map((category) => (
                 <div

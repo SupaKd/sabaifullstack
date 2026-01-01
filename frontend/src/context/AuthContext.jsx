@@ -1,26 +1,55 @@
-import { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+// ===== src/context/AuthContext.jsx ===== (VERSION UNIFIÉE - SANS AXIOS)
+import { createContext, useState, useEffect, useContext, useCallback } from 'react';
 
 const AuthContext = createContext();
 
 // Utiliser la variable d'environnement
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.sabai-thoiry.com';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Configuration axios avec l'URL depuis .env
-  axios.defaults.baseURL = API_URL;
-  axios.defaults.withCredentials = true;
+  // ✅ Helper fetch unifié (remplace axios)
+  const fetchAPI = useCallback(async (endpoint, options = {}) => {
+    const url = `${API_URL}/api${endpoint}`;
+    
+    const config = {
+      ...options,
+      credentials: 'include', 
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    };
 
-  const checkSession = async () => {
+    const response = await fetch(url, config);
+    
+    // Gérer les réponses vides
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
+
+    if (!response.ok) {
+      // ✅ Équivalent à error.response.data.message d'axios
+      const error = new Error(data.message || data.error || `Erreur HTTP ${response.status}`);
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+
+    return data;
+  }, []);
+
+  // ✅ Vérifier la session au chargement
+  const checkSession = useCallback(async () => {
     try {
       console.log(`🔍 Checking session on: ${API_URL}/api/admin/verify`);
-      const response = await axios.get('/api/admin/verify');
+      const data = await fetchAPI('/admin/verify');
       
-      if (response.data.user) {
-        setUser(response.data.user);
+      if (data.user) {
+        setUser(data.user);
+      } else {
+        setUser(null);
       }
     } catch (error) {
       console.error('Session check failed:', error.message);
@@ -28,42 +57,47 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchAPI]);
 
   useEffect(() => {
     checkSession();
-  }, []);
+  }, [checkSession]);
 
-  const login = async (email, password) => {
+  // ✅ Connexion
+  const login = useCallback(async (email, password) => {
     try {
       console.log(`🔐 Login attempt on: ${API_URL}/api/admin/login`);
-      const response = await axios.post('/api/admin/login', {
-        email,
-        password
+      const data = await fetchAPI('/admin/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
       });
 
-      if (response.data.user) {
-        setUser(response.data.user);
+      if (data.user) {
+        setUser(data.user);
         return { success: true };
       }
+      
+      return { success: false, message: 'Réponse invalide du serveur' };
     } catch (error) {
       console.error('Login error:', error);
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Erreur de connexion' 
+        message: error.message || 'Erreur de connexion' 
       };
     }
-  };
+  }, [fetchAPI]);
 
-  const logout = async () => {
+  // ✅ Déconnexion
+  const logout = useCallback(async () => {
     try {
-      await axios.post('/api/admin/logout');
-      setUser(null);
+      await fetchAPI('/admin/logout', { method: 'POST' });
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      // Toujours déconnecter côté client, même si l'API échoue
       setUser(null);
     }
-  };
+  }, [fetchAPI]);
 
   return (
     <AuthContext.Provider value={{ 

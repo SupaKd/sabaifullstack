@@ -1,8 +1,8 @@
-// ===== src/pages/client/OrderTracking.jsx =====
+// ===== src/pages/client/OrderTracking.jsx ===== (CORRIGÉ)
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../services/api';
-import ws from '../../services/websocket';
+import websocket from '../../services/websocket'; // ✅ Nom cohérent avec le reste du projet
 
 const OrderTracking = () => {
   const { orderId } = useParams();
@@ -15,16 +15,16 @@ const OrderTracking = () => {
     loadOrder();
     
     // Connexion WebSocket pour suivi temps réel
-    ws.connect('order', parseInt(orderId));
+    websocket.connect('order', parseInt(orderId));
     
-    ws.on('order_status_updated', (data) => {
+    websocket.on('order_status_updated', (data) => {
       if (data.order_id === parseInt(orderId)) {
         setOrder(prev => ({ ...prev, status: data.status }));
       }
     });
 
     return () => {
-      ws.disconnect();
+      websocket.disconnect();
     };
   }, [orderId]);
 
@@ -32,7 +32,7 @@ const OrderTracking = () => {
     try {
       const data = await api.getOrder(orderId);
       setOrder(data.order);
-      setItems(data.items);
+      setItems(data.items || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -52,9 +52,29 @@ const OrderTracking = () => {
     return statuses[status] || statuses.pending;
   };
 
-  if (loading) return <div className="container"><div className="loading">Chargement...</div></div>;
-  if (error) return <div className="container"><div className="error">Erreur: {error}</div></div>;
-  if (!order) return <div className="container"><div>Commande non trouvée</div></div>;
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="loading">Chargement...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container">
+        <div className="error">Erreur: {error}</div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="container">
+        <div>Commande non trouvée</div>
+      </div>
+    );
+  }
 
   const statusInfo = getStatusInfo(order.status);
 
@@ -69,7 +89,7 @@ const OrderTracking = () => {
           </div>
 
           <div style={styles.timeline}>
-            {['pending', 'confirmed', 'preparing', 'delivering', 'completed'].map((step, index) => {
+            {['pending', 'confirmed', 'preparing', 'delivering', 'completed'].map((step) => {
               const stepInfo = getStatusInfo(step);
               const isActive = stepInfo.step <= statusInfo.step;
               
