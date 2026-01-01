@@ -1,29 +1,30 @@
-// ===== src/components/NotificationSettings.jsx ===== (NOUVEAU FICHIER)
+// ===== src/components/NotificationSettings.jsx ===== (avec Lucide React)
 import { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faVolumeUp,
-  faVolumeDown,
-  faVolumeMute,
-  faBell,
-  faBellSlash,
-  faCog
-} from '@fortawesome/free-solid-svg-icons';
+  Volume2,
+  Volume1,
+  VolumeX,
+  Bell,
+  BellOff,
+  Settings,
+  X
+} from 'lucide-react';
 
 const NotificationSettings = ({ volume, setVolume, soundEnabled, setSoundEnabled, isConnected }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const getVolumeIcon = () => {
-    if (!soundEnabled || volume === 0) return faVolumeMute;
-    if (volume < 0.5) return faVolumeDown;
-    return faVolumeUp;
+    if (!soundEnabled || volume === 0) return VolumeX;
+    if (volume < 0.5) return Volume1;
+    return Volume2;
   };
+
+  const VolumeIcon = getVolumeIcon();
 
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
     
-    // Activer le son automatiquement si on change le volume
     if (!soundEnabled && newVolume > 0) {
       setSoundEnabled(true);
     }
@@ -43,16 +44,14 @@ const NotificationSettings = ({ volume, setVolume, soundEnabled, setSoundEnabled
 
   return (
     <div className="notification-settings">
-      {/* Bouton pour ouvrir les paramètres */}
       <button 
         className="settings-trigger"
         onClick={() => setIsOpen(!isOpen)}
         title="Paramètres des notifications"
       >
-        <FontAwesomeIcon icon={faCog} />
+        <Settings size={20} />
       </button>
 
-      {/* Panel des paramètres */}
       {isOpen && (
         <div className="settings-panel">
           <div className="settings-header">
@@ -61,18 +60,18 @@ const NotificationSettings = ({ volume, setVolume, soundEnabled, setSoundEnabled
               className="close-btn"
               onClick={() => setIsOpen(false)}
             >
-              ✕
+              <X size={18} />
             </button>
           </div>
 
           <div className="settings-body">
-            {/* Statut de connexion */}
             <div className="setting-item">
               <div className="setting-label">
-                <FontAwesomeIcon 
-                  icon={isConnected ? faBell : faBellSlash}
-                  className={isConnected ? 'text-success' : 'text-danger'}
-                />
+                {isConnected ? (
+                  <Bell size={18} className="text-success" />
+                ) : (
+                  <BellOff size={18} className="text-danger" />
+                )}
                 <span>Statut</span>
               </div>
               <div className="setting-value">
@@ -84,10 +83,9 @@ const NotificationSettings = ({ volume, setVolume, soundEnabled, setSoundEnabled
 
             <div className="divider"></div>
 
-            {/* Toggle son */}
             <div className="setting-item">
               <div className="setting-label">
-                <FontAwesomeIcon icon={getVolumeIcon()} />
+                <VolumeIcon size={18} />
                 <span>Son des notifications</span>
               </div>
               <div className="setting-value">
@@ -102,11 +100,10 @@ const NotificationSettings = ({ volume, setVolume, soundEnabled, setSoundEnabled
               </div>
             </div>
 
-            {/* Contrôle du volume */}
             {soundEnabled && (
               <div className="setting-item volume-control">
                 <div className="setting-label">
-                  <FontAwesomeIcon icon={getVolumeIcon()} />
+                  <VolumeIcon size={18} />
                   <span>Volume</span>
                   <span className="volume-percentage">{Math.round(volume * 100)}%</span>
                 </div>
@@ -120,12 +117,10 @@ const NotificationSettings = ({ volume, setVolume, soundEnabled, setSoundEnabled
                     onChange={handleVolumeChange}
                     className="volume-slider"
                   />
-                 
                 </div>
               </div>
             )}
 
-            {/* Bouton de test */}
             {soundEnabled && (
               <div className="setting-item">
                 <button 

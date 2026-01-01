@@ -5,12 +5,12 @@ import { useAuth } from "../../context/AuthContext";
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({
-    email: "", // ✅ Changé de username à email
+    email: "",
     password: "",
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth(); // ✅ Utiliser la fonction login du contexte
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,11 +19,10 @@ const AdminLogin = () => {
     setError(null);
 
     try {
-      // ✅ Utiliser la fonction login du AuthContext (qui utilise l'URL dynamique)
       const result = await login(credentials.email, credentials.password);
 
       if (result.success) {
-        console.log('✓ Connexion réussie');
+        console.log('Connexion reussie');
         navigate("/admin");
       } else {
         throw new Error(result.message || 'Erreur de connexion');

@@ -1,14 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faLocationDot,
-  faPhone,
-  faEnvelope,
-  faClock,
-  faHeart,
-} from "@fortawesome/free-solid-svg-icons";
-import { faFacebookF, faInstagram } from "@fortawesome/free-brands-svg-icons";
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  Heart,
+  Facebook,
+  Instagram,
+} from "lucide-react";
 
 function Footer() {
   return (
@@ -29,18 +29,15 @@ function Footer() {
 
             <div className="footer__contact">
               <div className="footer__contact-item">
-                <FontAwesomeIcon
-                  icon={faLocationDot}
-                  className="footer__icon"
-                />
+                <MapPin size={16} className="footer__icon" />
                 <span>42 Chem. de la Praille, 01710 Thoiry</span>
               </div>
               <div className="footer__contact-item">
-                <FontAwesomeIcon icon={faPhone} className="footer__icon" />
+                <Phone size={16} className="footer__icon" />
                 <span>+33 6 78 35 71 98</span>
               </div>
               <div className="footer__contact-item">
-                <FontAwesomeIcon icon={faEnvelope} className="footer__icon" />
+                <Mail size={16} className="footer__icon" />
                 <span>contact@sabai-thoiry.com</span>
               </div>
             </div>
@@ -49,7 +46,7 @@ function Footer() {
           {/* HORAIRES */}
           <div className="footer__section">
             <h4 className="footer__title">
-              <FontAwesomeIcon icon={faClock} className="footer__title-icon" />
+              <Clock size={16} className="footer__title-icon" />
               Nos Horaires
             </h4>
 
@@ -67,7 +64,7 @@ function Footer() {
 
             <div className="footer__social">
               <a href="https://www.facebook.com/people/Sabai/100064120840653/#" className="footer__social-link" aria-label="Facebook">
-                <FontAwesomeIcon icon={faFacebookF} />
+                <Facebook size={18} />
               </a>
 
               <a
@@ -75,7 +72,7 @@ function Footer() {
                 className="footer__social-link"
                 aria-label="Instagram"
               >
-                <FontAwesomeIcon icon={faInstagram} />
+                <Instagram size={18} />
               </a>
             </div>
           </div>
@@ -88,7 +85,7 @@ function Footer() {
           <div className="footer__copyright">
             <p>
               © 2025 SABAI. Fait avec
-              <FontAwesomeIcon icon={faHeart} className="footer__heart" /> à
+              <Heart size={14} className="footer__heart" fill="currentColor" /> à
               Thoiry.
             </p>
             <p>

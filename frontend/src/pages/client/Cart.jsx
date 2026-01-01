@@ -1,22 +1,21 @@
-// ===== src/pages/client/Cart.jsx ===== (VERSION CORRIGÉE)
+// ===== src/pages/client/Cart.jsx ===== (VERSION avec Lucide React)
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faTrash,
-  faShoppingCart,
-  faArrowLeft,
-  faLock,
-  faTruck,
-  faShoppingBag,
-  faBoxOpen,
-  faExclamationTriangle,
-} from "@fortawesome/free-solid-svg-icons";
+  Trash2,
+  ShoppingCart,
+  ArrowLeft,
+  Lock,
+  Truck,
+  ShoppingBag,
+  Package,
+  AlertTriangle,
+} from "lucide-react";
 import { notifyCartCleared, notifyStockIssue } from "../../utils/notify";
 import CartItem from "../../components/CartItem";
 import { useEffect, useState } from "react";
 import DeliveryClosedModal from "../../components/DeliveryClosedModal";
-import api from '../../services/api'; // ✅ CHANGEMENT
+import api from '../../services/api';
 
 const Cart = () => {
   const { items, getTotal, clearCart } = useCart();
@@ -27,11 +26,9 @@ const Cart = () => {
   const [serviceOpen, setServiceOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
-  // Paramètres de livraison
   const [deliveryFee, setDeliveryFee] = useState(5);
   const [deliveryMinAmount, setDeliveryMinAmount] = useState(30);
 
-  // ✅ CORRIGÉ : Vérifier statut du service
   useEffect(() => {
     const checkServiceStatus = async () => {
       try {
@@ -52,7 +49,6 @@ const Cart = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ CORRIGÉ : Charger les paramètres de livraison depuis la BDD
   useEffect(() => {
     const loadDeliverySettings = async () => {
       try {
@@ -110,17 +106,14 @@ const Cart = () => {
       <div className="container__cart">
         <div className="cart-empty">
           <div className="cart-empty__icon">
-            <FontAwesomeIcon icon={faShoppingCart} />
+            <ShoppingCart size={64} />
           </div>
           <h2 className="cart-empty__title">Votre panier est vide</h2>
           <p className="cart-empty__text">
             Ajoutez des produits pour commencer votre commande
           </p>
           <button onClick={() => navigate("/")} className="cart__btntwo">
-            <FontAwesomeIcon
-              icon={faShoppingCart}
-              style={{ marginRight: "0.5rem" }}
-            />
+            <ShoppingCart size={18} style={{ marginRight: "0.5rem" }} />
             Découvrir le menu
           </button>
         </div>
@@ -135,7 +128,7 @@ const Cart = () => {
         <div className="cart__header">
           <div className="cart__header-left">
             <button onClick={() => navigate("/")} className="cart__return">
-              <FontAwesomeIcon icon={faArrowLeft} />
+              <ArrowLeft size={18} />
               <span>Continuer mes achats</span>
             </button>
           </div>
@@ -157,7 +150,7 @@ const Cart = () => {
               <CartItem key={item.product.id} item={item} />
             ))}
             <button onClick={handleClearCart} className="cart__trash">
-              <FontAwesomeIcon icon={faTrash} />
+              <Trash2 size={18} />
               Vider le panier
             </button>
           </div>
@@ -186,13 +179,13 @@ const Cart = () => {
               {/* Règles livraison */}
               <div className="cart-summary__rules">
                 <p className="cart-summary__rules-title">
-                  <FontAwesomeIcon icon={faBoxOpen} />
+                  <Package size={18} />
                   Modes de retrait :
                 </p>
 
                 <ul className="cart-summary__rules-list">
                   <li>
-                    <FontAwesomeIcon icon={faTruck} style={{ marginRight: 6 }} />
+                    <Truck size={16} style={{ marginRight: 6 }} />
                     <strong>Livraison :</strong> {deliveryFee.toFixed(2)}€
                     {cartTotal < deliveryMinAmount && (
                       <span className="cart-summary__rules-warning">
@@ -202,10 +195,7 @@ const Cart = () => {
                   </li>
 
                   <li>
-                    <FontAwesomeIcon
-                      icon={faShoppingBag}
-                      style={{ marginRight: 6 }}
-                    />
+                    <ShoppingBag size={16} style={{ marginRight: 6 }} />
                     <strong>À emporter :</strong> Gratuit, sans minimum
                   </li>
                 </ul>
@@ -214,7 +204,7 @@ const Cart = () => {
               {/* Alerte minimum */}
               {cartTotal < deliveryMinAmount && (
                 <div className="cart-summary__min-alert">
-                  <FontAwesomeIcon icon={faExclamationTriangle} />
+                  <AlertTriangle size={18} />
                   <span>
                     Ajoutez{" "}
                     {(deliveryMinAmount - cartTotal).toFixed(2)}€ pour atteindre
@@ -238,7 +228,7 @@ const Cart = () => {
 
               <div className="cart-summary__info">
                 <p>
-                  <FontAwesomeIcon icon={faLock} /> Paiement sécurisé via Stripe
+                  <Lock size={14} /> Paiement sécurisé via Stripe
                 </p>
               </div>
             </div>

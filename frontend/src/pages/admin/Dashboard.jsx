@@ -1,21 +1,20 @@
-// ===== src/pages/admin/Dashboard.jsx ===== (OPTIMISÉ TABLETTE)
+// ===== src/pages/admin/Dashboard.jsx ===== (OPTIMISÉ TABLETTE avec Lucide)
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faShoppingCart,
-  faEuroSign,
-  faUtensils,
-  faClock,
-  faCheckCircle,
-  faTimesCircle,
-  faTruck,
-  faBox,
-  faBell,
-  faBellSlash,
-  faExclamationTriangle,
-  faSignOutAlt
-} from '@fortawesome/free-solid-svg-icons';
+  ShoppingCart,
+  Euro,
+  UtensilsCrossed,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Truck,
+  Package,
+  Bell,
+  BellOff,
+  AlertTriangle,
+  LogOut
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -68,7 +67,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     loadDashboardData();
     
-    // Auto-refresh toutes les 30 secondes
     const interval = setInterval(loadDashboardData, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -200,7 +198,6 @@ const AdminDashboard = () => {
           <h1>Tableau de bord</h1>
           
           <div className="header-actions">
-            {/* Contrôles audio */}
             <NotificationSettings
               volume={volume}
               setVolume={setVolume}
@@ -209,27 +206,27 @@ const AdminDashboard = () => {
               isConnected={isConnected}
             />
 
-            {/* Bouton Logout */}
             <button
               onClick={handleLogout}
               className="logout-btn-tablet"
               title="Déconnexion"
             >
-              <FontAwesomeIcon icon={faSignOutAlt} />
+              <LogOut size={20} />
             </button>
           </div>
         </div>
 
-        {/* Toggles Service - GROS BOUTONS TACTILES */}
+        {/* Toggles Service */}
         <div className="service-controls-tablet">
           <button
             onClick={toggleService}
             className={`service-toggle-btn ${serviceStatus.isOpen ? 'open' : 'closed'}`}
           >
-            <FontAwesomeIcon
-              icon={serviceStatus.isOpen ? faCheckCircle : faTimesCircle}
-              className="toggle-icon"
-            />
+            {serviceStatus.isOpen ? (
+              <CheckCircle size={32} className="toggle-icon" />
+            ) : (
+              <XCircle size={32} className="toggle-icon" />
+            )}
             <div className="toggle-content">
               <span className="toggle-label">Restaurant</span>
               <span className="toggle-status">
@@ -243,7 +240,7 @@ const AdminDashboard = () => {
             className={`service-toggle-btn ${serviceStatus.deliveryEnabled ? 'open' : 'closed'}`}
             disabled={!serviceStatus.isOpen}
           >
-            <FontAwesomeIcon icon={faTruck} className="toggle-icon" />
+            <Truck size={32} className="toggle-icon" />
             <div className="toggle-content">
               <span className="toggle-label">Livraison</span>
               <span className="toggle-status">
@@ -254,10 +251,10 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Actions rapides - GROS BOUTONS */}
+      {/* Actions rapides */}
       <div className="quick-actions-tablet">
         <Link to="/admin/orders" className="action-btn-tablet primary">
-          <FontAwesomeIcon icon={faShoppingCart} />
+          <ShoppingCart size={32} />
           <span>Commandes</span>
           {stats.pendingOrders > 0 && (
             <span className="badge-alert">{stats.pendingOrders}</span>
@@ -265,17 +262,17 @@ const AdminDashboard = () => {
         </Link>
 
         <Link to="/admin/products" className="action-btn-tablet">
-          <FontAwesomeIcon icon={faBox} />
+          <Package size={32} />
           <span>Produits</span>
         </Link>
 
         <Link to="/admin/horaires" className="action-btn-tablet">
-          <FontAwesomeIcon icon={faClock} />
+          <Clock size={32} />
           <span>Horaires</span>
         </Link>
       </div>
 
-      {/* Commandes récentes - FORMAT CARTE */}
+      {/* Commandes récentes */}
       <div className="recent-orders-tablet">
         <div className="section-header-tablet">
           <h2>Commandes récentes</h2>
@@ -286,7 +283,7 @@ const AdminDashboard = () => {
 
         {recentOrders.length === 0 ? (
           <div className="empty-state-tablet">
-            <FontAwesomeIcon icon={faShoppingCart} />
+            <ShoppingCart size={48} />
             <p>Aucune commande</p>
           </div>
         ) : (
@@ -310,9 +307,11 @@ const AdminDashboard = () => {
                     <div className="order-info">
                       <div className="order-customer">{order.customer_name || 'Client'}</div>
                       <div className="order-type">
-                        <FontAwesomeIcon 
-                          icon={order.order_type === 'delivery' ? faTruck : faUtensils} 
-                        />
+                        {order.order_type === 'delivery' ? (
+                          <Truck size={16} />
+                        ) : (
+                          <UtensilsCrossed size={16} />
+                        )}
                         {order.order_type === 'delivery' ? 'Livraison' : 'Sur place'}
                       </div>
                     </div>
@@ -330,10 +329,9 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Indicateur de priorité pour commandes urgentes */}
                   {order.status === 'pending' && (
                     <div className="order-urgent-indicator">
-                      <FontAwesomeIcon icon={faExclamationTriangle} />
+                      <AlertTriangle size={16} />
                     </div>
                   )}
                 </Link>

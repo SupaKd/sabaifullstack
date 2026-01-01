@@ -1,10 +1,9 @@
-// ===== src/pages/client/CheckoutSuccess.jsx ===== (VERSION CORRIGÉE)
+// ===== src/pages/client/CheckoutSuccess.jsx ===== (VERSION avec Lucide React)
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faSpinner } from '@fortawesome/free-solid-svg-icons';
-import api from '../../services/api'; // ✅ CHANGEMENT
+import { CheckCircle, Loader2 } from 'lucide-react';
+import api from '../../services/api';
 
 const CheckoutSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -30,7 +29,6 @@ const CheckoutSuccess = () => {
       }
 
       try {
-        // ✅ CHANGEMENT : Utiliser api.verifyPayment
         const data = await api.verifyPayment(sessionId);
 
         if (!isMounted) return;
@@ -62,11 +60,9 @@ const CheckoutSuccess = () => {
     return (
       <div className="checkout-success__container">
         <div className="checkout-success__content">
-          <FontAwesomeIcon 
-            icon={faSpinner} 
-            spin 
-            size="3x" 
-            className="checkout-success__icon-loading" 
+          <Loader2 
+            size={48} 
+            className="checkout-success__icon-loading animate-spin" 
           />
           <h2 className="checkout-success__title-loading">
             Vérification du paiement...
@@ -100,9 +96,8 @@ const CheckoutSuccess = () => {
   return (
     <div className="checkout-success__container">
       <div className="checkout-success__content">
-        <FontAwesomeIcon 
-          icon={faCheckCircle} 
-          size="5x" 
+        <CheckCircle 
+          size={80} 
           className="checkout-success__icon-success" 
         />
         <h1 className="checkout-success__title-success">

@@ -1,15 +1,14 @@
-// ===== src/components/CartItem.jsx (Version avec gestion conditionnelle d'image) =====
+// ===== src/components/CartItem.jsx (Version avec Lucide React) =====
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus,
-  faMinus,
-  faTrash,
-  faExclamationTriangle,
-  faExclamationCircle,
-  faUtensils, // ✅ Icône de remplacement
-} from "@fortawesome/free-solid-svg-icons";
+  Plus,
+  Minus,
+  Trash2,
+  AlertTriangle,
+  AlertCircle,
+  UtensilsCrossed,
+} from "lucide-react";
 import {
   notifyQuantityUpdated,
   notifyInvalidQuantity,
@@ -20,8 +19,8 @@ import API_CONFIG from '../services/api.config';
 const CartItem = ({ item }) => {
   const { updateQuantity, removeItem } = useCart();
   const [isRemoving, setIsRemoving] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false); // ✅ État pour savoir si l'image est chargée
-  const [imageError, setImageError] = useState(false); // ✅ État pour les erreurs d'image
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   if (!item?.product) return null;
 
@@ -34,7 +33,6 @@ const CartItem = ({ item }) => {
   const isLowStock = stock > 0 && stock < 10;
   const hasStockIssue = quantity > stock;
 
-  // ✅ Vérifier si le produit a une image valide
   const hasValidImage = () => {
     return item.product.image_url && 
            item.product.image_url.trim() !== '' && 
@@ -42,7 +40,6 @@ const CartItem = ({ item }) => {
            item.product.image_url !== 'undefined';
   };
 
-  // Gestion de l'image avec fallback
   const getImageUrl = () => {
     if (!hasValidImage()) {
       return null;
@@ -65,7 +62,6 @@ const CartItem = ({ item }) => {
     setImageError(false);
   };
 
-  // Incrémenter la quantité
   const handleIncrement = () => {
     if (quantity >= stock) {
       notifyStockMaxReached(stock);
@@ -76,7 +72,6 @@ const CartItem = ({ item }) => {
     notifyQuantityUpdated();
   };
 
-  // Décrémenter la quantité
   const handleDecrement = () => {
     if (quantity <= 1) {
       setIsRemoving(true);
@@ -90,7 +85,6 @@ const CartItem = ({ item }) => {
     notifyQuantityUpdated();
   };
 
-  // Changer la quantité manuellement
   const handleQuantityChange = (e) => {
     const newQuantity = Number(e.target.value);
     
@@ -108,13 +102,12 @@ const CartItem = ({ item }) => {
     updateQuantity(item.product.id, newQuantity);
   };
 
-  // Classes CSS dynamiques
   const cartItemClasses = [
     "cart-item",
     isRemoving && "cart-item--removing",
     isOutOfStock && "cart-item--unavailable",
     hasStockIssue && "cart-item--warning",
-    !hasValidImage() && "cart-item--no-image", // ✅ Classe spéciale sans image
+    !hasValidImage() && "cart-item--no-image",
   ]
     .filter(Boolean)
     .join(" ");
@@ -123,7 +116,7 @@ const CartItem = ({ item }) => {
 
   return (
     <div className={cartItemClasses}>
-      {/* ✅ Image du produit - CONDITIONNELLE */}
+      {/* Image du produit - CONDITIONNELLE */}
       {imageUrl && !imageError ? (
         <div className="cart-item__image">
           <img
@@ -134,7 +127,6 @@ const CartItem = ({ item }) => {
             loading="lazy"
             style={{ display: imageLoaded ? 'block' : 'none' }}
           />
-          {/* Loader pendant le chargement */}
           {!imageLoaded && (
             <div className="cart-item__image-loader">
               <div className="spinner"></div>
@@ -142,9 +134,8 @@ const CartItem = ({ item }) => {
           )}
         </div>
       ) : (
-        // ✅ Icône de remplacement si pas d'image
         <div className="cart-item__image cart-item__image--placeholder">
-          <FontAwesomeIcon icon={faUtensils} className="placeholder-icon" />
+          <UtensilsCrossed className="placeholder-icon" size={40} />
         </div>
       )}
 
@@ -170,7 +161,7 @@ const CartItem = ({ item }) => {
         {hasStockIssue && !isOutOfStock && (
           <div className="cart-item__alert cart-item__alert--error">
             <span className="alert-icon">
-              <FontAwesomeIcon icon={faExclamationTriangle} />
+              <AlertTriangle size={16} />
             </span>
             <span>Stock insuffisant (max: {stock})</span>
           </div>
@@ -179,7 +170,7 @@ const CartItem = ({ item }) => {
         {isLowStock && !isOutOfStock && !hasStockIssue && (
           <div className="cart-item__alert cart-item__alert--warning">
             <span className="alert-icon">
-              <FontAwesomeIcon icon={faExclamationTriangle} />
+              <AlertTriangle size={16} />
             </span>
             <span>
               Plus que {stock - quantity} disponible{stock - quantity > 1 ? "s" : ""}
@@ -190,7 +181,7 @@ const CartItem = ({ item }) => {
         {isOutOfStock && (
           <div className="cart-item__alert cart-item__alert--error">
             <span className="alert-icon">
-              <FontAwesomeIcon icon={faExclamationCircle} />
+              <AlertCircle size={16} />
             </span>
             <span>Produit actuellement indisponible</span>
           </div>
@@ -199,7 +190,6 @@ const CartItem = ({ item }) => {
 
       {/* Actions */}
       <div className="cart-item__actions">
-        {/* Contrôles de quantité */}
         <div className="cart-item__quantity">
           <div className="quantity-controls">
             <button
@@ -210,9 +200,9 @@ const CartItem = ({ item }) => {
               title={quantity <= 1 ? "Supprimer l'article" : "Diminuer"}
             >
               {quantity <= 1 ? (
-                <FontAwesomeIcon icon={faTrash} />
+                <Trash2 size={16} />
               ) : (
-                <FontAwesomeIcon icon={faMinus} />
+                <Minus size={16} />
               )}
             </button>
 
@@ -234,12 +224,11 @@ const CartItem = ({ item }) => {
               aria-label="Augmenter la quantité"
               title={quantity >= stock ? "Stock maximum atteint" : "Augmenter"}
             >
-              <FontAwesomeIcon icon={faPlus} />
+              <Plus size={16} />
             </button>
           </div>
         </div>
 
-        {/* Sous-total */}
         <div className="cart-item__subtotal">
           <span className="cart-item__subtotal-amount">{subtotal} €</span>
         </div>

@@ -1,25 +1,23 @@
-// ===== src/pages/admin/Products.jsx ===== (CORRIGÉ - SANS IMPORT INUTILISÉ)
+// ===== src/pages/admin/Products.jsx ===== (VERSION avec Lucide React)
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft,
-  faImage,
-  faEdit,
-  faCheck,
-  faTimes,
-  faBell,
-  faBox,
-  faExclamationTriangle,
-  faToggleOn,
-  faToggleOff,
-  faTrash
-} from '@fortawesome/free-solid-svg-icons';
+  ArrowLeft,
+  Image,
+  Pencil,
+  Check,
+  X,
+  Bell,
+  Package,
+  AlertTriangle,
+  ToggleLeft,
+  ToggleRight,
+  Trash2
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import API_CONFIG from '../../services/api.config';
 import useAdminNotifications from '../../hooks/useAdminNotifications';
-// ✅ SUPPRIMÉ: import { useAuth } from '../../context/AuthContext'; (non utilisé)
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -62,14 +60,14 @@ const AdminProducts = () => {
       setEditingStock(null);
       setNewStock('');
       
-      toast.success('✓ Stock mis à jour', {
+      toast.success('Stock mis a jour', {
         duration: 2000,
         style: { fontSize: '18px', padding: '16px 24px' }
       });
       
       loadProducts();
     } catch (err) {
-      toast.error('Erreur de mise à jour');
+      toast.error('Erreur de mise a jour');
     }
   };
 
@@ -78,7 +76,7 @@ const AdminProducts = () => {
     
     try {
       await api.uploadProductImage(productId, file);
-      toast.success('✓ Image uploadée', {
+      toast.success('Image uploadee', {
         duration: 2000,
         style: { fontSize: '18px', padding: '16px 24px' }
       });
@@ -91,7 +89,7 @@ const AdminProducts = () => {
   const handleAvailabilityToggle = async (productId, newAvailability) => {
     try {
       await api.updateProductAvailability(productId, newAvailability);
-      toast.success(newAvailability ? '✓ Produit disponible' : 'Produit indisponible', {
+      toast.success(newAvailability ? 'Produit disponible' : 'Produit indisponible', {
         duration: 2000,
         style: { fontSize: '18px', padding: '16px 24px' }
       });
@@ -103,10 +101,9 @@ const AdminProducts = () => {
 
   const handleDeleteProduct = async (productId) => {
     if (deletingProduct === productId) {
-      // Confirmation : supprimer définitivement
       try {
         await api.deleteProduct(productId);
-        toast.success('✓ Produit supprimé', {
+        toast.success('Produit supprime', {
           duration: 2000,
           style: { fontSize: '18px', padding: '16px 24px' }
         });
@@ -118,15 +115,13 @@ const AdminProducts = () => {
         setDeletingProduct(null);
       }
     } else {
-      // Premier clic : demander confirmation
       setDeletingProduct(productId);
-      toast('Cliquez à nouveau pour confirmer', {
+      toast('Cliquez a nouveau pour confirmer', {
         icon: '⚠️',
         duration: 3000,
         style: { fontSize: '16px', padding: '12px 20px' }
       });
       
-      // Reset après 3 secondes
       setTimeout(() => {
         setDeletingProduct(null);
       }, 3000);
@@ -144,25 +139,25 @@ const AdminProducts = () => {
       color: '#dc3545', 
       bgColor: '#f8d7da', 
       label: 'RUPTURE',
-      icon: faExclamationTriangle
+      Icon: AlertTriangle
     };
     if (stockNum < 10) return { 
       color: '#ffc107', 
       bgColor: '#fff8e1', 
       label: 'FAIBLE',
-      icon: faExclamationTriangle
+      Icon: AlertTriangle
     };
     if (stockNum < 20) return { 
       color: '#17a2b8', 
       bgColor: '#d1ecf1', 
       label: 'MOYEN',
-      icon: faBox
+      Icon: Package
     };
     return { 
       color: '#28a745', 
       bgColor: '#d4edda', 
       label: 'OK',
-      icon: faBox
+      Icon: Package
     };
   };
 
@@ -184,7 +179,7 @@ const AdminProducts = () => {
       {/* Header */}
       <div className="products-header-tablet">
         <Link to="/admin" className="back-btn-tablet">
-          <FontAwesomeIcon icon={faArrowLeft} />
+          <ArrowLeft size={20} />
         </Link>
         
         <h1>Produits</h1>
@@ -192,7 +187,7 @@ const AdminProducts = () => {
         <div className="header-badges">
           {isConnected && (
             <span className="ws-badge connected">
-              <FontAwesomeIcon icon={faBell} />
+              <Bell size={18} />
             </span>
           )}
           <span className="count-badge">{products.length}</span>
@@ -219,7 +214,7 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      {/* Filtres catégories */}
+      {/* Filtres categories */}
       <div className="category-filters-tablet">
         <button
           onClick={() => setCategoryFilter('all')}
@@ -246,7 +241,7 @@ const AdminProducts = () => {
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="empty-state-tablet">
-          <FontAwesomeIcon icon={faBox} />
+          <Package size={64} />
           <p>Aucun produit</p>
         </div>
       ) : (
@@ -255,6 +250,7 @@ const AdminProducts = () => {
             const stockConfig = getStockConfig(product.stock);
             const isEditing = editingStock === product.id;
             const isDeleting = deletingProduct === product.id;
+            const StockIcon = stockConfig.Icon;
 
             return (
               <div 
@@ -273,7 +269,7 @@ const AdminProducts = () => {
                     />
                   ) : (
                     <div className="no-image-tablet">
-                      <FontAwesomeIcon icon={faImage} />
+                      <Image size={48} />
                       <span>Pas d'image</span>
                     </div>
                   )}
@@ -285,7 +281,7 @@ const AdminProducts = () => {
                       onChange={(e) => handleImageUpload(product.id, e.target.files[0])}
                       style={{ display: 'none' }}
                     />
-                    <FontAwesomeIcon icon={faImage} />
+                    <Image size={16} />
                     Changer
                   </label>
                 </div>
@@ -316,13 +312,13 @@ const AdminProducts = () => {
                           onClick={() => handleStockUpdate(product.id)}
                           className="btn-confirm-tablet"
                         >
-                          <FontAwesomeIcon icon={faCheck} />
+                          <Check size={20} />
                         </button>
                         <button 
                           onClick={() => setEditingStock(null)}
                           className="btn-cancel-tablet"
                         >
-                          <FontAwesomeIcon icon={faTimes} />
+                          <X size={20} />
                         </button>
                       </div>
                     ) : (
@@ -334,7 +330,7 @@ const AdminProducts = () => {
                             color: stockConfig.color
                           }}
                         >
-                          <FontAwesomeIcon icon={stockConfig.icon} />
+                          <StockIcon size={18} />
                           <span className="stock-value">{product.stock}</span>
                           <span className="stock-label">{stockConfig.label}</span>
                         </div>
@@ -342,22 +338,24 @@ const AdminProducts = () => {
                           onClick={() => startEditStock(product)}
                           className="btn-edit-stock-tablet"
                         >
-                          <FontAwesomeIcon icon={faEdit} />
+                          <Pencil size={16} />
                           Modifier
                         </button>
                       </div>
                     )}
                   </div>
 
-                  {/* Actions : Toggle disponibilité + Supprimer */}
+                  {/* Actions : Toggle disponibilite + Supprimer */}
                   <div className="product-actions-tablet">
                     <button
                       className={`availability-btn-tablet ${product.available ? 'available' : 'unavailable'}`}
                       onClick={() => handleAvailabilityToggle(product.id, !product.available)}
                     >
-                      <FontAwesomeIcon 
-                        icon={product.available ? faToggleOn : faToggleOff} 
-                      />
+                      {product.available ? (
+                        <ToggleRight size={24} />
+                      ) : (
+                        <ToggleLeft size={24} />
+                      )}
                       <span>{product.available ? 'Disponible' : 'Indisponible'}</span>
                     </button>
 
@@ -365,7 +363,7 @@ const AdminProducts = () => {
                       className={`delete-btn-tablet ${isDeleting ? 'confirm' : ''}`}
                       onClick={() => handleDeleteProduct(product.id)}
                     >
-                      <FontAwesomeIcon icon={faTrash} />
+                      <Trash2 size={18} />
                       <span>{isDeleting ? 'Confirmer' : ''}</span>
                     </button>
                   </div>

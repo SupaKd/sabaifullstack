@@ -1,7 +1,6 @@
 // ===== src/components/ErrorBoundary.jsx =====
 import { Component } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faExclamationTriangle, faHome } from '@fortawesome/free-solid-svg-icons';
+import { AlertTriangle, Home } from 'lucide-react';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -18,16 +17,12 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log l'erreur pour debugging
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
     this.setState({
       error,
       errorInfo
     });
-
-    // ✅ Envoyer l'erreur à un service de monitoring (optionnel)
-    // sendErrorToMonitoring(error, errorInfo);
   }
 
   handleReset = () => {
@@ -41,7 +36,7 @@ class ErrorBoundary extends Component {
         <div className="error-boundary">
           <div className="error-boundary__content">
             <div className="error-boundary__icon">
-              <FontAwesomeIcon icon={faExclamationTriangle} />
+              <AlertTriangle size={80} />
             </div>
 
             <h1 className="error-boundary__title">
@@ -53,7 +48,6 @@ class ErrorBoundary extends Component {
               Notre équipe a été notifiée et travaille sur le problème.
             </p>
 
-            {/* Afficher l'erreur en développement */}
             {import.meta.env.DEV && this.state.error && (
               <details className="error-boundary__details">
                 <summary>Détails de l'erreur (développement)</summary>
@@ -69,7 +63,7 @@ class ErrorBoundary extends Component {
                 onClick={this.handleReset}
                 className="error-boundary__btn error-boundary__btn--primary"
               >
-                <FontAwesomeIcon icon={faHome} />
+                <Home size={18} />
                 Retour à l'accueil
               </button>
 

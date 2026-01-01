@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-
-// FontAwesome
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBasketShopping } from "@fortawesome/free-solid-svg-icons";
-import { faInstagram } from "@fortawesome/free-brands-svg-icons";
+import { ShoppingBasket, Instagram } from "lucide-react";
 
 function Navbar() {
   const { getItemCount } = useCart();
@@ -30,14 +26,11 @@ function Navbar() {
               rel="noopener noreferrer"
               className="navbar__instagram"
             >
-              <FontAwesomeIcon icon={faInstagram} />
+              <Instagram size={24} />
             </a>
 
             <Link to="/cart" className="navbar__cart-link">
-              <FontAwesomeIcon
-                icon={faBasketShopping}
-                className="navbar__cart-icon"
-              />
+              <ShoppingBasket size={24} className="navbar__cart-icon" />
               {getItemCount() > 0 && (
                 <span className="navbar__cart-badge">{getItemCount()}</span>
               )}

@@ -1,8 +1,8 @@
-// ===== src/pages/client/OrderTracking.jsx ===== (CORRIGÉ)
+// ===== src/pages/client/OrderTracking.jsx ===== (avec Lucide React)
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../services/api';
-import websocket from '../../services/websocket'; // ✅ Nom cohérent avec le reste du projet
+import websocket from '../../services/websocket';
 
 const OrderTracking = () => {
   const { orderId } = useParams();
@@ -14,7 +14,6 @@ const OrderTracking = () => {
   useEffect(() => {
     loadOrder();
     
-    // Connexion WebSocket pour suivi temps réel
     websocket.connect('order', parseInt(orderId));
     
     websocket.on('order_status_updated', (data) => {
@@ -43,11 +42,11 @@ const OrderTracking = () => {
   const getStatusInfo = (status) => {
     const statuses = {
       pending: { label: 'En attente', color: '#ffc107', step: 1 },
-      confirmed: { label: 'Confirmée', color: '#17a2b8', step: 2 },
-      preparing: { label: 'En préparation', color: '#007bff', step: 3 },
+      confirmed: { label: 'Confirmee', color: '#17a2b8', step: 2 },
+      preparing: { label: 'En preparation', color: '#007bff', step: 3 },
       delivering: { label: 'En livraison', color: '#fd7e14', step: 4 },
-      completed: { label: 'Livrée', color: '#28a745', step: 5 },
-      cancelled: { label: 'Annulée', color: '#dc3545', step: 0 }
+      completed: { label: 'Livree', color: '#28a745', step: 5 },
+      cancelled: { label: 'Annulee', color: '#dc3545', step: 0 }
     };
     return statuses[status] || statuses.pending;
   };
@@ -71,7 +70,7 @@ const OrderTracking = () => {
   if (!order) {
     return (
       <div className="container">
-        <div>Commande non trouvée</div>
+        <div>Commande non trouvee</div>
       </div>
     );
   }
@@ -110,14 +109,14 @@ const OrderTracking = () => {
           <div style={styles.info}>
             <h2>Informations de livraison</h2>
             <p><strong>Nom:</strong> {order.customer_name}</p>
-            <p><strong>Téléphone:</strong> {order.customer_phone}</p>
+            <p><strong>Telephone:</strong> {order.customer_phone}</p>
             <p><strong>Adresse:</strong> {order.delivery_address}</p>
             {order.notes && <p><strong>Notes:</strong> {order.notes}</p>}
           </div>
         </div>
 
         <div style={styles.summary}>
-          <h2>Détails de la commande</h2>
+          <h2>Details de la commande</h2>
           
           {items.map(item => {
             const price = parseFloat(item.price);
@@ -128,11 +127,11 @@ const OrderTracking = () => {
                 <div>
                   <div style={{ fontWeight: 'bold' }}>{item.name}</div>
                   <div style={{ fontSize: '14px', color: '#666' }}>
-                    {price.toFixed(2)} € x {quantity}
+                    {price.toFixed(2)} EUR x {quantity}
                   </div>
                 </div>
                 <div style={{ fontWeight: 'bold' }}>
-                  {(price * quantity).toFixed(2)} €
+                  {(price * quantity).toFixed(2)} EUR
                 </div>
               </div>
             );
@@ -141,11 +140,11 @@ const OrderTracking = () => {
           <hr />
           <div style={styles.total}>
             <span>Total</span>
-            <span>{parseFloat(order.total_amount).toFixed(2)} €</span>
+            <span>{parseFloat(order.total_amount).toFixed(2)} EUR</span>
           </div>
 
           <div style={styles.date}>
-            Commandé le {new Date(order.created_at).toLocaleString('fr-FR')}
+            Commande le {new Date(order.created_at).toLocaleString('fr-FR')}
           </div>
         </div>
       </div>

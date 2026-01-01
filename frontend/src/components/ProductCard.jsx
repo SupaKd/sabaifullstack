@@ -1,8 +1,7 @@
-// ===== src/components/ProductCard.jsx ===== (VERSION OPTIMISÉE)
+// ===== src/components/ProductCard.jsx ===== (VERSION OPTIMISÉE avec Lucide)
 import { useCart } from "../context/CartContext";
 import { useServiceStatus } from "../context/ServiceStatusContext";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faClock } from "@fortawesome/free-solid-svg-icons";
+import { Plus, Clock } from "lucide-react";
 import OptimizedImage from "./OptimizedImage";
 import toast from "react-hot-toast";
 
@@ -19,7 +18,6 @@ const ProductCard = ({ product }) => {
   const stock = parseInt(product.stock_quantity || product.stock || 0);
   const isServiceOpen = serviceStatus?.open ?? true;
 
-  // Calculer la quantité déjà dans le panier
   const getQuantityInCart = () => {
     const cartItem = items.find(item => item.product?.id === product.id);
     return cartItem ? cartItem.quantity : 0;
@@ -30,7 +28,6 @@ const ProductCard = ({ product }) => {
   const isFullyInCart = availableStock <= 0;
 
   const handleAddToCart = () => {
-    // Vérifier si le service est ouvert
     if (!isServiceOpen) {
       toast.error("Nous sommes actuellement fermés", {
         duration: 4000,
@@ -39,13 +36,11 @@ const ProductCard = ({ product }) => {
       return;
     }
 
-    // Vérifier si le produit est en rupture de stock
     if (stock === 0) {
       notifyOutOfStock();
       return;
     }
 
-    // Vérifier si tout le stock est déjà dans le panier
     if (isFullyInCart) {
       toast.error(`Vous avez déjà tout le stock disponible dans votre panier (${quantityInCart})`, {
         duration: 4000,
@@ -54,7 +49,6 @@ const ProductCard = ({ product }) => {
       return;
     }
 
-    // Vérifier si on peut ajouter +1 au panier
     if (quantityInCart >= stock) {
       toast.error(`Stock maximum atteint (${stock} disponibles)`, {
         duration: 4000,
@@ -63,14 +57,11 @@ const ProductCard = ({ product }) => {
       return;
     }
 
-    // Ajouter au panier
     addItem(product, 1);
     
-    // Nouvelle quantité après ajout
     const newQuantityInCart = quantityInCart + 1;
     const remainingStock = stock - newQuantityInCart;
 
-    // Notification d'ajout au panier
     if (remainingStock > 0) {
       notifyAddToCart(product.name);
     } else {
@@ -80,7 +71,6 @@ const ProductCard = ({ product }) => {
       });
     }
 
-    // Alerte de stock faible
     if (remainingStock > 0 && remainingStock < 5) {
       toast(`Plus que ${remainingStock} disponible${remainingStock > 1 ? 's' : ''}`, {
         duration: 3000,
@@ -93,21 +83,18 @@ const ProductCard = ({ product }) => {
     }
   };
 
-  // Calculer si le bouton doit être désactivé
   const isDisabled = !isServiceOpen || stock === 0 || isFullyInCart;
 
-  // Déterminer le texte du bouton
   const getButtonContent = () => {
     if (!isServiceOpen) {
-      return <FontAwesomeIcon icon={faClock} />;
+      return <Clock size={18} />;
     }
     if (stock === 0 || isFullyInCart) {
       return "Rupture";
     }
-    return <FontAwesomeIcon icon={faPlus} />;
+    return <Plus size={18} />;
   };
 
-  // Déterminer le titre du bouton
   const getButtonTitle = () => {
     if (!isServiceOpen) {
       return "Service fermé";
@@ -140,7 +127,6 @@ const ProductCard = ({ product }) => {
           </button>
         </div>
 
-        {/* Affichage du stock (uniquement si service ouvert) */}
         {isServiceOpen && stock > 0 && (
           <div className="product-card__stock-info">
             {availableStock > 0 && availableStock < 10 && (
@@ -152,7 +138,6 @@ const ProductCard = ({ product }) => {
         )}
       </div>
 
-      {/* ✅ IMAGE OPTIMISÉE */}
       {product.image_url && (
         <OptimizedImage
           src={product.image_url}

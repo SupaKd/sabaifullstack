@@ -1,22 +1,21 @@
-// ===== src/pages/admin/Orders.jsx ===== (VERSION SIMPLIFIÉE TABLETTE)
+// ===== src/pages/admin/Orders.jsx ===== (VERSION avec Lucide React)
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
-  faClock,
-  faUser,
-  faPhone,
-  faMapMarkerAlt,
-  faCommentDots,
-  faTruck,
-  faUtensils,
-  faCheck,
-  faHourglass,
-  faBan,
-  faBell,
-  faExclamationCircle,
-} from "@fortawesome/free-solid-svg-icons";
+  ArrowLeft,
+  Clock,
+  User,
+  Phone,
+  MapPin,
+  MessageCircle,
+  Truck,
+  UtensilsCrossed,
+  Check,
+  Hourglass,
+  Ban,
+  Bell,
+  AlertCircle,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
@@ -30,7 +29,6 @@ const AdminOrders = () => {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      // Charger toutes les commandes
       const data = await api.getAdminOrders();
 
       if (data.success !== undefined) {
@@ -77,42 +75,42 @@ const AdminOrders = () => {
         label: "Nouvelle commande",
         color: "#ffc107",
         bgColor: "#fff8e1",
-        icon: faHourglass,
+        Icon: Hourglass,
         priority: 1,
       },
       confirmed: {
         label: "Confirmée",
         color: "#17a2b8",
         bgColor: "#d1ecf1",
-        icon: faCheck,
+        Icon: Check,
         priority: 2,
       },
       preparing: {
         label: "En préparation",
         color: "#28a745",
         bgColor: "#d4edda",
-        icon: faUtensils,
+        Icon: UtensilsCrossed,
         priority: 3,
       },
       delivering: {
         label: "En livraison",
         color: "#6f42c1",
         bgColor: "#e7d4f5",
-        icon: faTruck,
+        Icon: Truck,
         priority: 4,
       },
       completed: {
         label: "Terminée",
         color: "#6c757d",
         bgColor: "#e9ecef",
-        icon: faCheck,
+        Icon: Check,
         priority: 5,
       },
       cancelled: {
         label: "Annulée",
         color: "#dc3545",
         bgColor: "#f8d7da",
-        icon: faBan,
+        Icon: Ban,
         priority: 6,
       },
     };
@@ -120,7 +118,6 @@ const AdminOrders = () => {
   };
 
   const getNextStatuses = (currentStatus, orderType) => {
-    // Workflow pour livraison
     const deliveryFlows = {
       pending: ["confirmed", "cancelled"],
       confirmed: ["preparing", "cancelled"],
@@ -130,7 +127,6 @@ const AdminOrders = () => {
       cancelled: [],
     };
 
-    // Workflow pour à emporter (pas de livraison)
     const takeawayFlows = {
       pending: ["confirmed", "cancelled"],
       confirmed: ["preparing", "cancelled"],
@@ -166,38 +162,30 @@ const AdminOrders = () => {
     });
   };
 
-  // Compter les nouvelles commandes (pending)
   const pendingCount = orders.filter(
     (order) => order.status === "pending"
   ).length;
 
-  // Trier par statut (nouvelles en premier) puis par date
   const sortedOrders = [...orders].sort((a, b) => {
-    // Priorité 1: Nouvelles commandes en premier
     if (a.status === "pending" && b.status !== "pending") return -1;
     if (a.status !== "pending" && b.status === "pending") return 1;
-
-    // Priorité 2: Par date (plus récentes en premier)
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
   return (
     <div className="admin-orders-tablet">
-      {/* Header simplifié */}
+      {/* Header */}
       <div className="orders-header-tablet">
         <Link to="/admin" className="back-btn-tablet">
-          <FontAwesomeIcon icon={faArrowLeft} />
+          <ArrowLeft size={20} />
         </Link>
 
         <h1>Commandes</h1>
 
         <div className="header-badges">
-         
-
-          {/* Badge nouvelles commandes */}
           {pendingCount > 0 && (
             <span className="new-orders-badge">
-              <FontAwesomeIcon icon={faExclamationCircle} />
+              <AlertCircle size={18} />
               <span>
                 {pendingCount} nouvelle{pendingCount > 1 ? "s" : ""}
               </span>
@@ -206,7 +194,7 @@ const AdminOrders = () => {
         </div>
       </div>
 
-      {/* Liste des commandes */}
+      {/* Liste */}
       {loading ? (
         <div className="loading-tablet">
           <div className="spinner"></div>
@@ -214,7 +202,7 @@ const AdminOrders = () => {
         </div>
       ) : orders.length === 0 ? (
         <div className="empty-state-tablet">
-          <FontAwesomeIcon icon={faUtensils} />
+          <UtensilsCrossed size={64} />
           <p>Aucune commande</p>
         </div>
       ) : (
@@ -226,6 +214,7 @@ const AdminOrders = () => {
               order.order_type
             );
             const isNew = order.status === "pending";
+            const StatusIcon = statusConfig.Icon;
 
             return (
               <div
@@ -236,19 +225,17 @@ const AdminOrders = () => {
                   background: statusConfig.bgColor,
                 }}
               >
-                {/* Badge "NOUVELLE" pour les commandes non traitées */}
                 {isNew && (
                   <div className="new-order-indicator">
-                    <FontAwesomeIcon icon={faExclamationCircle} />
+                    <AlertCircle size={14} />
                     <span>NOUVELLE</span>
                   </div>
                 )}
 
-                {/* Header de la commande */}
+                {/* Header */}
                 <div className="order-card-header-tablet">
                   <div className="order-number-tablet">#{order.id}</div>
 
-                  {/* Badge Type de commande */}
                   <div
                     className="order-type-badge-tablet"
                     style={{
@@ -257,11 +244,11 @@ const AdminOrders = () => {
                       color: "white",
                     }}
                   >
-                    <FontAwesomeIcon
-                      icon={
-                        order.order_type === "delivery" ? faTruck : faUtensils
-                      }
-                    />
+                    {order.order_type === "delivery" ? (
+                      <Truck size={14} />
+                    ) : (
+                      <UtensilsCrossed size={14} />
+                    )}
                     <span>
                       {order.order_type === "delivery"
                         ? "Livraison"
@@ -276,27 +263,27 @@ const AdminOrders = () => {
                       color: "white",
                     }}
                   >
-                    <FontAwesomeIcon icon={statusConfig.icon} />
+                    <StatusIcon size={16} />
                     <span>{statusConfig.label}</span>
                   </div>
 
                   <div className="order-time-tablet">
-                    <FontAwesomeIcon icon={faClock} />
+                    <Clock size={16} />
                     {order.delivery_time
                       ? formatDeliveryTime(order.delivery_time)
                       : formatTime(order.created_at)}
                   </div>
                 </div>
 
-                {/* Infos client */}
+                {/* Client */}
                 <div className="order-client-tablet">
                   <div className="client-row">
-                    <FontAwesomeIcon icon={faUser} />
+                    <User size={18} />
                     <span className="client-name">{order.customer_name}</span>
                   </div>
 
                   <div className="client-row">
-                    <FontAwesomeIcon icon={faPhone} />
+                    <Phone size={18} />
                     <a
                       href={`tel:${order.customer_phone}`}
                       className="client-phone"
@@ -307,7 +294,7 @@ const AdminOrders = () => {
 
                   {order.delivery_address && (
                     <div className="client-row">
-                      <FontAwesomeIcon icon={faMapMarkerAlt} />
+                      <MapPin size={18} />
                       <span className="client-address">
                         {order.delivery_address}
                       </span>
@@ -324,22 +311,22 @@ const AdminOrders = () => {
                 {/* Notes */}
                 {order.notes && (
                   <div className="order-notes-tablet">
-                    <FontAwesomeIcon icon={faCommentDots} />
+                    <MessageCircle size={18} />
                     <span>{order.notes}</span>
                   </div>
                 )}
 
-                {/* Footer avec montant et actions */}
+                {/* Footer */}
                 <div className="order-footer-tablet">
                   <div className="order-total-tablet">
                     {parseFloat(order.total_amount).toFixed(2)} €
                   </div>
 
-                  {/* Boutons d'action rapide */}
                   {nextStatuses.length > 0 && (
                     <div className="order-actions-tablet">
                       {nextStatuses.map((nextStatus) => {
                         const nextConfig = getStatusConfig(nextStatus);
+                        const NextIcon = nextConfig.Icon;
                         return (
                           <button
                             key={nextStatus}
@@ -352,7 +339,7 @@ const AdminOrders = () => {
                               color: "white",
                             }}
                           >
-                            <FontAwesomeIcon icon={nextConfig.icon} />
+                            <NextIcon size={16} />
                             {nextConfig.label}
                           </button>
                         );

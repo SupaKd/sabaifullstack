@@ -1,7 +1,7 @@
-// ===== src/pages/client/OrderFormWithProtection.jsx ===== (CORRIGÉ)
+// ===== src/pages/client/OrderFormWithProtection.jsx ===== (avec Lucide React)
 import React, { useState } from 'react';
 import ServiceStatus from '../../components/ServiceStatus';
-import API_CONFIG from '../../services/api.config'; // ✅ Chemin corrigé
+import API_CONFIG from '../../services/api.config';
 
 const OrderFormWithProtection = () => {
   const [serviceOpen, setServiceOpen] = useState(false);
@@ -22,7 +22,7 @@ const OrderFormWithProtection = () => {
     e.preventDefault();
 
     if (!serviceOpen) {
-      alert('Le service est actuellement fermé. Veuillez réessayer pendant nos horaires d\'ouverture.');
+      alert('Le service est actuellement ferme. Veuillez reessayer pendant nos horaires d\'ouverture.');
       return;
     }
 
@@ -39,7 +39,7 @@ const OrderFormWithProtection = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        alert('Commande créée avec succès ! Numéro de commande : ' + data.order_id);
+        alert('Commande creee avec succes ! Numero de commande : ' + data.order_id);
         setFormData({
           customer_name: '',
           customer_email: '',
@@ -50,14 +50,14 @@ const OrderFormWithProtection = () => {
         });
       } else {
         if (response.status === 503) {
-          alert(`Service indisponible : ${data.reason || 'Veuillez réessayer plus tard'}`);
+          alert(`Service indisponible : ${data.reason || 'Veuillez reessayer plus tard'}`);
         } else {
           alert(`Erreur : ${data.error || 'Une erreur est survenue'}`);
         }
       }
     } catch (error) {
       console.error('Erreur lors de la commande:', error);
-      alert('Erreur de connexion. Veuillez réessayer.');
+      alert('Erreur de connexion. Veuillez reessayer.');
     }
   };
 
@@ -76,7 +76,7 @@ const OrderFormWithProtection = () => {
         <div className="service-closed-overlay">
           <div className="closed-message">
             <span className="closed-icon">🕐</span>
-            <h3>Service actuellement fermé</h3>
+            <h3>Service actuellement ferme</h3>
             <p>Vous pourrez commander pendant nos horaires d'ouverture.</p>
             <p className="closed-hint">Consultez nos horaires ci-dessus</p>
           </div>
@@ -118,7 +118,7 @@ const OrderFormWithProtection = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="customer_phone">Téléphone *</label>
+          <label htmlFor="customer_phone">Telephone *</label>
           <input
             type="tel"
             id="customer_phone"
@@ -140,20 +140,20 @@ const OrderFormWithProtection = () => {
             onChange={handleChange}
             required
             disabled={!serviceOpen}
-            placeholder="Adresse complète"
+            placeholder="Adresse complete"
             rows="3"
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="notes">Instructions spéciales</label>
+          <label htmlFor="notes">Instructions speciales</label>
           <textarea
             id="notes"
             name="notes"
             value={formData.notes}
             onChange={handleChange}
             disabled={!serviceOpen}
-            placeholder="Allergies, préférences, code d'accès..."
+            placeholder="Allergies, preferences, code d'acces..."
             rows="2"
           />
         </div>
@@ -163,7 +163,7 @@ const OrderFormWithProtection = () => {
           className="submit-btn"
           disabled={!serviceOpen}
         >
-          {serviceOpen ? 'Passer la commande' : 'Service fermé'}
+          {serviceOpen ? 'Passer la commande' : 'Service ferme'}
         </button>
       </form>
     </div>

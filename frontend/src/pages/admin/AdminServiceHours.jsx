@@ -1,19 +1,18 @@
-// ===== src/pages/admin/AdminServiceHours.jsx ===== (OPTIMISÉ TABLETTE)
+// ===== src/pages/admin/AdminServiceHours.jsx ===== (avec Lucide React)
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faArrowLeft,
-  faClock, 
-  faCalendarAlt, 
-  faSave, 
-  faTrash, 
-  faPlus,
-  faCog,
-  faBell,
-  faToggleOn,
-  faToggleOff
-} from '@fortawesome/free-solid-svg-icons';
+  ArrowLeft,
+  Clock, 
+  Calendar, 
+  Save, 
+  Trash2, 
+  Plus,
+  Settings,
+  Bell,
+  ToggleLeft,
+  ToggleRight
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import useAdminNotifications from '../../hooks/useAdminNotifications';
@@ -23,9 +22,8 @@ const AdminServiceHours = () => {
   const [closures, setClosures] = useState([]);
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState('hours'); // hours, closures, settings
+  const [activeSection, setActiveSection] = useState('hours');
 
-  // États pour le formulaire de fermeture
   const [newClosure, setNewClosure] = useState({
     closure_date: '',
     reason: '',
@@ -79,20 +77,20 @@ const AdminServiceHours = () => {
       const data = await api.getServiceSettings();
       setSettings(data.data || {});
     } catch (error) {
-      console.error('Erreur paramètres:', error);
+      console.error('Erreur parametres:', error);
     }
   };
 
   const handleUpdateHours = async (dayOfWeek, updatedHours) => {
     try {
       await api.updateDayHours(dayOfWeek, updatedHours);
-      toast.success('✓ Horaires mis à jour', {
+      toast.success('Horaires mis a jour', {
         duration: 2000,
         style: { fontSize: '18px', padding: '16px 24px' }
       });
       loadHours();
     } catch (error) {
-      toast.error('Erreur de mise à jour');
+      toast.error('Erreur de mise a jour');
     }
   };
 
@@ -107,7 +105,7 @@ const AdminServiceHours = () => {
         is_active: !isActive
       });
 
-      toast.success(isActive ? 'Jour désactivé' : 'Jour activé', {
+      toast.success(isActive ? 'Jour desactive' : 'Jour active', {
         duration: 2000,
         style: { fontSize: '18px', padding: '16px 24px' }
       });
@@ -127,7 +125,7 @@ const AdminServiceHours = () => {
 
     try {
       await api.addClosure(newClosure);
-      toast.success('✓ Fermeture ajoutée', {
+      toast.success('Fermeture ajoutee', {
         duration: 2000,
         style: { fontSize: '18px', padding: '16px 24px' }
       });
@@ -147,7 +145,7 @@ const AdminServiceHours = () => {
   const handleDeleteClosure = async (id) => {
     try {
       await api.deleteClosure(id);
-      toast.success('✓ Fermeture supprimée', {
+      toast.success('Fermeture supprimee', {
         duration: 2000,
         style: { fontSize: '18px', padding: '16px 24px' }
       });
@@ -160,7 +158,7 @@ const AdminServiceHours = () => {
   const handleUpdateSetting = async (key, value) => {
     try {
       await api.updateServiceSetting(key, value);
-      toast.success('✓ Paramètre mis à jour', {
+      toast.success('Parametre mis a jour', {
         duration: 2000,
         style: { fontSize: '18px', padding: '16px 24px' }
       });
@@ -203,15 +201,15 @@ const AdminServiceHours = () => {
       {/* Header */}
       <div className="hours-header-tablet">
         <Link to="/admin" className="back-btn-tablet">
-          <FontAwesomeIcon icon={faArrowLeft} />
+          <ArrowLeft size={20} />
         </Link>
         
-        <h1>Horaires & Paramètres</h1>
+        <h1>Horaires & Parametres</h1>
         
         <div className="header-badges">
           {isConnected && (
             <span className="ws-badge connected">
-              <FontAwesomeIcon icon={faBell} />
+              <Bell size={18} />
             </span>
           )}
         </div>
@@ -223,22 +221,22 @@ const AdminServiceHours = () => {
           className={`tab-btn ${activeSection === 'hours' ? 'active' : ''}`}
           onClick={() => setActiveSection('hours')}
         >
-          <FontAwesomeIcon icon={faClock} />
+          <Clock size={24} />
           <span>Horaires</span>
         </button>
         <button
           className={`tab-btn ${activeSection === 'closures' ? 'active' : ''}`}
           onClick={() => setActiveSection('closures')}
         >
-          <FontAwesomeIcon icon={faCalendarAlt} />
+          <Calendar size={24} />
           <span>Fermetures</span>
         </button>
         <button
           className={`tab-btn ${activeSection === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveSection('settings')}
         >
-          <FontAwesomeIcon icon={faCog} />
-          <span>Paramètres</span>
+          <Settings size={24} />
+          <span>Parametres</span>
         </button>
       </div>
 
@@ -257,8 +255,12 @@ const AdminServiceHours = () => {
                     className={`toggle-btn-tablet ${hour.is_active ? 'on' : 'off'}`}
                     onClick={() => handleToggleDay(hour.day_of_week, hour.is_active)}
                   >
-                    <FontAwesomeIcon icon={hour.is_active ? faToggleOn : faToggleOff} />
-                    <span>{hour.is_active ? 'Ouvert' : 'Fermé'}</span>
+                    {hour.is_active ? (
+                      <ToggleRight size={20} />
+                    ) : (
+                      <ToggleLeft size={20} />
+                    )}
+                    <span>{hour.is_active ? 'Ouvert' : 'Ferme'}</span>
                   </button>
                 </div>
 
@@ -292,7 +294,7 @@ const AdminServiceHours = () => {
                       className="save-btn-tablet"
                       onClick={() => saveHour(hour.day_of_week)}
                     >
-                      <FontAwesomeIcon icon={faSave} />
+                      <Save size={18} />
                       Enregistrer
                     </button>
                   </>
@@ -328,7 +330,7 @@ const AdminServiceHours = () => {
                 onChange={(e) =>
                   setNewClosure({ ...newClosure, reason: e.target.value })
                 }
-                placeholder="Ex: Jour férié"
+                placeholder="Ex: Jour ferie"
               />
             </div>
 
@@ -340,13 +342,13 @@ const AdminServiceHours = () => {
                   setNewClosure({ ...newClosure, is_all_day: e.target.checked })
                 }
               />
-              <span>Toute la journée</span>
+              <span>Toute la journee</span>
             </label>
 
             {!newClosure.is_all_day && (
               <div className="time-range-tablet">
                 <div className="form-field-tablet">
-                  <label>Début</label>
+                  <label>Debut</label>
                   <input
                     type="time"
                     value={newClosure.start_time}
@@ -370,7 +372,7 @@ const AdminServiceHours = () => {
             )}
 
             <button type="submit" className="add-btn-tablet">
-              <FontAwesomeIcon icon={faPlus} />
+              <Plus size={18} />
               Ajouter une fermeture
             </button>
           </form>
@@ -379,8 +381,8 @@ const AdminServiceHours = () => {
           <div className="closures-list-tablet">
             {closures.length === 0 ? (
               <div className="empty-state-tablet">
-                <FontAwesomeIcon icon={faCalendarAlt} />
-                <p>Aucune fermeture prévue</p>
+                <Calendar size={64} />
+                <p>Aucune fermeture prevue</p>
               </div>
             ) : (
               closures.map((closure) => (
@@ -406,7 +408,7 @@ const AdminServiceHours = () => {
                     className="delete-btn-tablet"
                     onClick={() => handleDeleteClosure(closure.id)}
                   >
-                    <FontAwesomeIcon icon={faTrash} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
               ))
@@ -415,15 +417,15 @@ const AdminServiceHours = () => {
         </div>
       )}
 
-      {/* SECTION 3 : Paramètres */}
+      {/* SECTION 3 : Parametres */}
       {activeSection === 'settings' && (
         <div className="section-content-tablet">
           <div className="settings-grid-tablet">
-            {/* Service activé */}
+            {/* Service active */}
             <div className="setting-card-tablet">
               <div className="setting-label-tablet">
-                <span>Service activé</span>
-                <p>Active/désactive le restaurant</p>
+                <span>Service active</span>
+                <p>Active/desactive le restaurant</p>
               </div>
               <button
                 className={`toggle-btn-tablet ${settings.service_enabled === 'true' ? 'on' : 'off'}`}
@@ -431,16 +433,20 @@ const AdminServiceHours = () => {
                   handleUpdateSetting('service_enabled', (settings.service_enabled !== 'true').toString())
                 }
               >
-                <FontAwesomeIcon icon={settings.service_enabled === 'true' ? faToggleOn : faToggleOff} />
+                {settings.service_enabled === 'true' ? (
+                  <ToggleRight size={20} />
+                ) : (
+                  <ToggleLeft size={20} />
+                )}
                 <span>{settings.service_enabled === 'true' ? 'Actif' : 'Inactif'}</span>
               </button>
             </div>
 
-            {/* Livraison activée */}
+            {/* Livraison activee */}
             <div className="setting-card-tablet">
               <div className="setting-label-tablet">
                 <span>Livraison</span>
-                <p>Active/désactive la livraison</p>
+                <p>Active/desactive la livraison</p>
               </div>
               <button
                 className={`toggle-btn-tablet ${settings.delivery_enabled === 'true' ? 'on' : 'off'}`}
@@ -448,14 +454,18 @@ const AdminServiceHours = () => {
                   handleUpdateSetting('delivery_enabled', (settings.delivery_enabled !== 'true').toString())
                 }
               >
-                <FontAwesomeIcon icon={settings.delivery_enabled === 'true' ? faToggleOn : faToggleOff} />
+                {settings.delivery_enabled === 'true' ? (
+                  <ToggleRight size={20} />
+                ) : (
+                  <ToggleLeft size={20} />
+                )}
                 <span>{settings.delivery_enabled === 'true' ? 'Actif' : 'Inactif'}</span>
               </button>
             </div>
 
-            {/* Temps de préparation */}
+            {/* Temps de preparation */}
             <div className="setting-card-tablet full-width">
-              <label>Temps de préparation (minutes)</label>
+              <label>Temps de preparation (minutes)</label>
               <input
                 type="number"
                 value={settings.preparation_time_minutes || 30}
@@ -469,7 +479,7 @@ const AdminServiceHours = () => {
 
             {/* Frais de livraison */}
             <div className="setting-card-tablet">
-              <label>Frais de livraison (€)</label>
+              <label>Frais de livraison (EUR)</label>
               <input
                 type="number"
                 step="0.01"
@@ -484,7 +494,7 @@ const AdminServiceHours = () => {
 
             {/* Minimum commande */}
             <div className="setting-card-tablet">
-              <label>Minimum livraison (€)</label>
+              <label>Minimum livraison (EUR)</label>
               <input
                 type="number"
                 step="0.01"

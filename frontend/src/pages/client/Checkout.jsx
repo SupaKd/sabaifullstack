@@ -1,25 +1,23 @@
-// ===== src/pages/client/Checkout.jsx ===== (VERSION CORRIGÉE + STRIPE)
+// ===== src/pages/client/Checkout.jsx ===== (VERSION avec Lucide React)
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faMapMarkerAlt,
-  faClock,
-  faEnvelope,
-  faPhone,
-  faUser,
-  faHome,
-  faMailBulk,
-  faTruck,
-  faShoppingBag,
-  faExclamationTriangle,
-  faBan,
-  faLock,
-} from "@fortawesome/free-solid-svg-icons";
+  MapPin,
+  Clock,
+  Mail,
+  Phone,
+  User,
+  Home,
+  Truck,
+  ShoppingBag,
+  AlertTriangle,
+  Ban,
+  Lock,
+} from "lucide-react";
 import { notifyOrderError } from "../../utils/notify";
 import DeliveryClosedModal from "../../components/DeliveryClosedModal";
-import api from "../../services/api"; // ✅ CHANGEMENT
+import api from "../../services/api";
 
 const PAYS_DE_GEX_CITIES = [
   { name: "Thoiry", postalCode: "01710" },
@@ -71,7 +69,6 @@ const Checkout = () => {
     if (serviceHours) generateTimeSlots();
   }, [serviceHours, formData.order_type]);
 
-  // ✅ CORRIGÉ : Vérifier statut service
   useEffect(() => {
     const checkServiceStatus = async () => {
       try {
@@ -92,7 +89,6 @@ const Checkout = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ CORRIGÉ : Vérifier statut livraison
   useEffect(() => {
     const checkDeliveryStatus = async () => {
       try {
@@ -117,7 +113,6 @@ const Checkout = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ CORRIGÉ : Charger paramètres livraison
   useEffect(() => {
     const loadDeliverySettings = async () => {
       try {
@@ -134,7 +129,6 @@ const Checkout = () => {
     loadDeliverySettings();
   }, []);
 
-  // ✅ CORRIGÉ : Charger horaires
   const loadServiceHours = async () => {
     try {
       const data = await api.getServiceHours();
@@ -271,7 +265,6 @@ const Checkout = () => {
     return cartTotal;
   };
 
-  // ✅ CORRIGÉ : Utiliser api.createCheckoutSession
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -284,7 +277,6 @@ const Checkout = () => {
     }
 
     try {
-      // Préparer les données de commande
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -311,7 +303,6 @@ const Checkout = () => {
         orderData.delivery_address = `${formData.delivery_address}, ${formData.postal_code} ${formData.city}`;
       }
 
-      // ✅ Utiliser api.createCheckoutSession
       const data = await api.createCheckoutSession(orderData);
 
       if (!data.success) {
@@ -320,7 +311,6 @@ const Checkout = () => {
         );
       }
 
-      // ✅ Rediriger vers Stripe Checkout
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -354,10 +344,7 @@ const Checkout = () => {
                   }`}
                   onClick={() => handleOrderTypeChange("delivery")}
                 >
-                  <FontAwesomeIcon
-                    icon={faTruck}
-                    className="order-type__icon"
-                  />
+                  <Truck size={32} className="order-type__icon" />
                   <div className="order-type__label">Livraison</div>
                   <div className="order-type__description">
                     À votre domicile
@@ -365,16 +352,10 @@ const Checkout = () => {
                 </button>
               ) : (
                 <div className="order-type__option order-type__option--disabled">
-                  <FontAwesomeIcon
-                    icon={faTruck}
-                    className="order-type__icon"
-                  />
+                  <Truck size={32} className="order-type__icon" />
                   <div className="order-type__label">Livraison</div>
                   <div className="order-type__description">
-                    <FontAwesomeIcon
-                      icon={faBan}
-                      style={{ marginRight: "0.3rem" }}
-                    />
+                    <Ban size={14} style={{ marginRight: "0.3rem" }} />
                     Indisponible
                   </div>
                 </div>
@@ -387,10 +368,7 @@ const Checkout = () => {
                 }`}
                 onClick={() => handleOrderTypeChange("takeaway")}
               >
-                <FontAwesomeIcon
-                  icon={faShoppingBag}
-                  className="order-type__icon"
-                />
+                <ShoppingBag size={32} className="order-type__icon" />
                 <div className="order-type__label">À emporter</div>
                 <div className="order-type__description">Retrait sur place</div>
               </button>
@@ -398,7 +376,7 @@ const Checkout = () => {
 
             {!deliveryAvailable && (
               <div className="delivery-disabled-alert">
-                <FontAwesomeIcon icon={faExclamationTriangle} />
+                <AlertTriangle size={18} />
                 <span>
                   La livraison est temporairement désactivée. Seul le retrait au
                   restaurant est disponible.
@@ -411,7 +389,7 @@ const Checkout = () => {
 
           <div className="form-field">
             <label className="form-field__label">
-              <FontAwesomeIcon icon={faUser} /> Nom *
+              <User size={16} /> Nom *
             </label>
             <input
               type="text"
@@ -425,7 +403,7 @@ const Checkout = () => {
 
           <div className="form-field">
             <label className="form-field__label">
-              <FontAwesomeIcon icon={faEnvelope} /> Email (pour suivi de
+              <Mail size={16} /> Email (pour suivi de
               commande) *
             </label>
             <input
@@ -440,7 +418,7 @@ const Checkout = () => {
 
           <div className="form-field">
             <label className="form-field__label">
-              <FontAwesomeIcon icon={faPhone} /> Téléphone *
+              <Phone size={16} /> Téléphone *
             </label>
             <input
               type="tel"
@@ -456,7 +434,7 @@ const Checkout = () => {
             <>
               <div className="form-field">
                 <label className="form-field__label">
-                  <FontAwesomeIcon icon={faMapMarkerAlt} /> Ville *
+                  <MapPin size={16} /> Ville *
                 </label>
                 <select
                   name="city"
@@ -477,7 +455,7 @@ const Checkout = () => {
               {formData.city && (
                 <div className="checkout__selected-city">
                   <small>
-                    <FontAwesomeIcon icon={faMailBulk} /> Code postal :{" "}
+                    <Mail size={12} /> Code postal :{" "}
                     {formData.postal_code}
                   </small>
                 </div>
@@ -485,7 +463,7 @@ const Checkout = () => {
 
               <div className="form-field">
                 <label className="form-field__label">
-                  <FontAwesomeIcon icon={faHome} /> Adresse *
+                  <Home size={16} /> Adresse *
                 </label>
                 <input
                   type="text"
@@ -502,7 +480,7 @@ const Checkout = () => {
           <div className="checkout__delivery-schedule">
             <div className="form-field">
               <label className="form-field__label">
-                <FontAwesomeIcon icon={faClock} />
+                <Clock size={16} />
                 {formData.order_type === "delivery"
                   ? " Heure de livraison *"
                   : " Heure de retrait *"}
@@ -570,7 +548,7 @@ const Checkout = () => {
             {formData.order_type === "delivery" &&
               getTotal() < deliveryMinAmount && (
                 <div className="checkout__min-warning">
-                  <FontAwesomeIcon icon={faExclamationTriangle} />
+                  <AlertTriangle size={18} />
                   <span>
                     Minimum {deliveryMinAmount.toFixed(2)}€ pour la livraison
                     (encore {(deliveryMinAmount - getTotal()).toFixed(2)}€)
@@ -606,7 +584,7 @@ const Checkout = () => {
         </form>
         <div className="checkout__stripe">
           <p>
-            <FontAwesomeIcon icon={faLock} /> Paiement sécurisé via Stripe
+            <Lock size={14} /> Paiement sécurisé via Stripe
           </p>
         </div>
       </div>
