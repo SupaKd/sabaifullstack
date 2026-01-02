@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { ShoppingBasket, Instagram } from "lucide-react";
+import { ShoppingCart, Instagram } from "lucide-react";
 
 function Navbar() {
   const { getItemCount } = useCart();
@@ -30,7 +30,7 @@ function Navbar() {
             </a>
 
             <Link to="/cart" className="navbar__cart-link">
-              <ShoppingBasket size={24} className="navbar__cart-icon" />
+              <ShoppingCart size={24} className="navbar__cart-icon" />
               {getItemCount() > 0 && (
                 <span className="navbar__cart-badge">{getItemCount()}</span>
               )}

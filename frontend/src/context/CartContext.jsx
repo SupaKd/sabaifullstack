@@ -1,4 +1,4 @@
-// ===== src/context/CartContext.jsx ===== (VERSION OPTIMISÉE)
+// ===== src/context/CartContext.jsx ===== (VERSION CORRIGÉE)
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import toast from 'react-hot-toast';
 
@@ -14,12 +14,25 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
   const [items, setItems] = useState(() => {
-    const saved = localStorage.getItem('cart');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('cart');
+      if (!saved) return [];
+      
+      const parsed = JSON.parse(saved);
+      // ✅ CORRECTION : Vérifier que c'est bien un tableau
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.error('Erreur lors du chargement du panier:', error);
+      return [];
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
+    try {
+      localStorage.setItem('cart', JSON.stringify(items));
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du panier:', error);
+    }
   }, [items]);
 
   // ✅ OPTIMISATION : Mémoriser addItem avec useCallback
@@ -122,6 +135,9 @@ export const CartProvider = ({ children }) => {
 
   // ✅ OPTIMISATION : Calculer le total avec useMemo
   const total = useMemo(() => {
+    // ✅ CORRECTION : Vérifier que items est un tableau
+    if (!Array.isArray(items)) return 0;
+    
     return items.reduce((sum, item) => {
       if (!item.product || !item.product.price) return sum;
       const price = parseFloat(item.product.price);
@@ -132,6 +148,9 @@ export const CartProvider = ({ children }) => {
 
   // ✅ OPTIMISATION : Calculer le nombre d'items avec useMemo
   const itemCount = useMemo(() => {
+    // ✅ CORRECTION : Vérifier que items est un tableau
+    if (!Array.isArray(items)) return 0;
+    
     return items.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0);
   }, [items]);
 
