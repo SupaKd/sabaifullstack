@@ -1,4 +1,4 @@
-// ===== src/services/api.js ===== (VERSION COOKIES)
+// ===== src/services/api.js ===== (VERSION CORRIGÉE)
 import API_CONFIG from './api.config';
 
 class APIService {
@@ -11,7 +11,7 @@ class APIService {
     
     const config = {
       ...options,
-      credentials: 'include', // ✅ TOUJOURS inclure les cookies
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options.headers
@@ -20,23 +20,43 @@ class APIService {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+      
+      // ✅ CORRECTION: Gérer les réponses vides
+      const text = await response.text();
+      let data = {};
+      
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          console.error('Erreur parsing JSON:', parseError);
+          data = { error: 'Réponse invalide du serveur' };
+        }
+      }
 
       if (!response.ok) {
         // Session expirée - rediriger vers login
-        if (response.status === 401 && (data.code === 'TOKEN_EXPIRED' || data.code === 'NO_TOKEN')) {
-          console.warn('Session expirée, redirection vers login...');
-          localStorage.removeItem('admin_user');
-          window.location.href = '/admin/login';
-          throw new Error('Session expirée');
+        if (response.status === 401) {
+          const code = data.code;
+          if (code === 'TOKEN_EXPIRED' || code === 'NO_TOKEN' || code === 'INVALID_TOKEN') {
+            console.warn('Session expirée, redirection vers login...');
+            // ✅ Ne pas rediriger si on est déjà sur la page login
+            if (!window.location.pathname.includes('/admin/login')) {
+              window.location.href = '/admin/login';
+            }
+            throw new Error('Session expirée');
+          }
         }
 
-        throw new Error(data.error || `Erreur HTTP ${response.status}`);
+        throw new Error(data.error || data.message || `Erreur HTTP ${response.status}`);
       }
 
       return data;
     } catch (error) {
-      console.error(`Erreur API ${endpoint}:`, error);
+      // ✅ Ne pas logger les erreurs de session expirée
+      if (!error.message.includes('Session expirée')) {
+        console.error(`Erreur API ${endpoint}:`, error);
+      }
       throw error;
     }
   }
@@ -64,36 +84,46 @@ class APIService {
     });
   }
 
+  async getOrder(id) {
+    return this.request(`/orders/${id}`);
+  }
+
   // ========== MÉTHODES ADMIN ==========
 
-  // ✅ Login (ne retourne plus le token, il est dans le cookie)
   async adminLogin(credentials) {
     const response = await fetch(API_CONFIG.url('/admin/login'), {
       method: 'POST',
-      credentials: 'include', // ← Important
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(credentials)
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    let data = {};
+    
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Réponse invalide du serveur');
+      }
+    }
 
     if (!response.ok) {
       throw new Error(data.error || 'Erreur de connexion');
     }
 
-    return data; // { success: true, user: {...} }
+    return data;
   }
 
-  // ✅ Logout
   async adminLogout() {
     return this.request('/admin/logout', {
       method: 'POST'
     });
   }
 
-  // ✅ Vérifier la session
   async verifySession() {
     return this.request('/admin/verify');
   }
@@ -103,7 +133,7 @@ class APIService {
     return this.request(`/admin/orders${queryString ? `?${queryString}` : ''}`);
   }
 
-  async getOrder(id) {
+  async getAdminOrder(id) {
     return this.request(`/admin/orders/${id}`);
   }
 
@@ -161,12 +191,21 @@ class APIService {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        credentials: 'include', // ✅ Envoyer cookies
+        credentials: 'include',
         body: formData
         // ❌ NE PAS mettre Content-Type (géré automatiquement avec FormData)
       });
 
-      const data = await response.json();
+      const text = await response.text();
+      let data = {};
+      
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          throw new Error('Réponse invalide du serveur');
+        }
+      }
 
       if (!response.ok) {
         throw new Error(data.error || `Erreur HTTP ${response.status}`);
@@ -260,7 +299,8 @@ class APIService {
       body: JSON.stringify({ session_id: sessionId })
     });
   }
-  
 }
 
-export default new APIService();
+// ✅ Export singleton
+const apiInstance = new APIService();
+export default apiInstance;

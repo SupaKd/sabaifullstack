@@ -1,4 +1,4 @@
-// ===== routes/admin.js ===== (VERSION SÉCURISÉE - COOKIES httpOnly)
+// ===== routes/admin.js ===== (VERSION CORRIGÉE)
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
@@ -8,9 +8,8 @@ const { sendOrderStatusEmail } = require('../config/email');
 const { validateProductStock, validateOrderStatus } = require('../middleware/validation');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
-
 const JWT_SECRET = process.env.JWT_SECRET || 'votre_secret_jwt_a_changer';
-const JWT_EXPIRES_IN = '8h'; // Token valide 8 heures
+const JWT_EXPIRES_IN = '8h';
 
 /* =====================================================
    ADMIN LOGIN - Génère un JWT et le stocke dans un cookie httpOnly
@@ -18,10 +17,10 @@ const JWT_EXPIRES_IN = '8h'; // Token valide 8 heures
 router.post('/login', async (req, res, next) => {
   try {
     const pool = getPool();
-    const { email, password } = req.body; // ✅ Changé de username à email
+    const { email, password } = req.body;
 
     console.log('=== TENTATIVE DE CONNEXION ===');
-    console.log('Email:', email); // ✅ Debug
+    console.log('Email:', email);
 
     if (!email || !password) {
       return res.status(400).json({ 
@@ -32,7 +31,7 @@ router.post('/login', async (req, res, next) => {
 
     // Cherche l'utilisateur admin par email
     const [users] = await pool.query(
-      'SELECT * FROM admin_users WHERE email = ?', // ✅ Changé de username à email
+      'SELECT * FROM admin_users WHERE email = ?',
       [email]
     );
 
@@ -57,21 +56,21 @@ router.post('/login', async (req, res, next) => {
     const token = jwt.sign(
       { 
         id: users[0].id, 
-        email: users[0].email, // ✅ Changé
+        email: users[0].email,
         role: 'admin'
       },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
 
-// Stocker le token dans un cookie httpOnly
-res.cookie('admin_token', token, {
-  httpOnly: true,
-  secure: true, // ✅ Force HTTPS
-  sameSite: 'none', // ✅ IMPORTANT : Permet les cookies cross-domain
-  domain: '.sabai-thoiry.com', // ✅ Partage le cookie entre sabai-thoiry.com et api.sabai-thoiry.com
-  maxAge: 8 * 60 * 60 * 1000
-});
+    // Stocker le token dans un cookie httpOnly
+    res.cookie('admin_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      domain: process.env.NODE_ENV === 'production' ? '.sabai-thoiry.com' : undefined,
+      maxAge: 8 * 60 * 60 * 1000
+    });
 
     // Mise à jour last_login
     await pool.query(
@@ -86,7 +85,7 @@ res.cookie('admin_token', token, {
       message: 'Connexion réussie',
       user: { 
         id: users[0].id, 
-        email: users[0].email // ✅ Changé
+        email: users[0].email
       }
     });
 
@@ -100,15 +99,15 @@ res.cookie('admin_token', token, {
    ADMIN LOGOUT - Supprime le cookie
 ===================================================== */
 router.post('/logout', authenticateToken, (req, res) => {
-  // ✅ Supprimer le cookie
+  // ✅ CORRIGÉ: Utiliser email au lieu de username
   res.clearCookie('admin_token', {
-  httpOnly: true,
-  secure: true,
-  sameSite: 'none',
-  domain: '.sabai-thoiry.com'
-});
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? '.sabai-thoiry.com' : undefined
+  });
   
-  console.log(`✓ Déconnexion admin ${req.user.username}`);
+  console.log(`✓ Déconnexion admin ${req.user.email}`);
   
   res.json({
     success: true,
@@ -120,12 +119,13 @@ router.post('/logout', authenticateToken, (req, res) => {
    VÉRIFIER TOKEN - Endpoint pour valider un token existant
 ===================================================== */
 router.get('/verify', authenticateToken, (req, res) => {
+  // ✅ CORRIGÉ: Retourner email au lieu de username
   res.json({
     success: true,
     valid: true,
     user: {
       id: req.user.id,
-      username: req.user.username,
+      email: req.user.email,
       role: req.user.role
     }
   });

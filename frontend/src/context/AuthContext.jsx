@@ -1,16 +1,18 @@
-// ===== src/context/AuthContext.jsx ===== (VERSION UNIFIÉE - SANS AXIOS)
-import { createContext, useState, useEffect, useContext, useCallback } from 'react';
+// ===== src/context/AuthContext.jsx ===== (VERSION CORRIGÉE)
+import { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
 
 const AuthContext = createContext();
 
-// Utiliser la variable d'environnement
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.sabai-thoiry.com';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // ✅ Éviter les doubles vérifications
+  const hasCheckedSession = useRef(false);
 
-  // ✅ Helper fetch unifié (remplace axios)
+  // Helper fetch unifié
   const fetchAPI = useCallback(async (endpoint, options = {}) => {
     const url = `${API_URL}/api${endpoint}`;
     
@@ -27,10 +29,17 @@ export const AuthProvider = ({ children }) => {
     
     // Gérer les réponses vides
     const text = await response.text();
-    const data = text ? JSON.parse(text) : {};
+    let data = {};
+    
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Erreur parsing JSON:', e);
+      }
+    }
 
     if (!response.ok) {
-      // ✅ Équivalent à error.response.data.message d'axios
       const error = new Error(data.message || data.error || `Erreur HTTP ${response.status}`);
       error.status = response.status;
       error.data = data;
@@ -40,8 +49,14 @@ export const AuthProvider = ({ children }) => {
     return data;
   }, []);
 
-  // ✅ Vérifier la session au chargement
+  // Vérifier la session au chargement
   const checkSession = useCallback(async () => {
+    // ✅ Ne vérifier qu'une seule fois au chargement initial
+    if (hasCheckedSession.current) {
+      return;
+    }
+    hasCheckedSession.current = true;
+    
     try {
       console.log(`🔍 Checking session on: ${API_URL}/api/admin/verify`);
       const data = await fetchAPI('/admin/verify');
@@ -52,7 +67,10 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
       }
     } catch (error) {
-      console.error('Session check failed:', error.message);
+      // ✅ Ne pas afficher d'erreur pour les 401 (session non connectée normale)
+      if (error.status !== 401) {
+        console.error('Session check failed:', error.message);
+      }
       setUser(null);
     } finally {
       setLoading(false);
@@ -63,7 +81,7 @@ export const AuthProvider = ({ children }) => {
     checkSession();
   }, [checkSession]);
 
-  // ✅ Connexion
+  // Connexion
   const login = useCallback(async (email, password) => {
     try {
       console.log(`🔐 Login attempt on: ${API_URL}/api/admin/login`);
@@ -72,32 +90,42 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password }),
       });
 
-      if (data.user) {
+      if (data.success && data.user) {
         setUser(data.user);
+        // ✅ Réinitialiser le flag pour permettre une nouvelle vérification si nécessaire
+        hasCheckedSession.current = true;
         return { success: true };
       }
       
-      return { success: false, message: 'Réponse invalide du serveur' };
+      return { success: false, message: data.error || 'Réponse invalide du serveur' };
     } catch (error) {
       console.error('Login error:', error);
       return { 
         success: false, 
-        message: error.message || 'Erreur de connexion' 
+        message: error.data?.error || error.message || 'Erreur de connexion' 
       };
     }
   }, [fetchAPI]);
 
-  // ✅ Déconnexion
+  // Déconnexion
   const logout = useCallback(async () => {
     try {
       await fetchAPI('/admin/logout', { method: 'POST' });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Toujours déconnecter côté client, même si l'API échoue
       setUser(null);
+      // ✅ Réinitialiser pour permettre une nouvelle session
+      hasCheckedSession.current = false;
     }
   }, [fetchAPI]);
+
+  // ✅ Forcer une nouvelle vérification de session
+  const refreshSession = useCallback(async () => {
+    hasCheckedSession.current = false;
+    setLoading(true);
+    await checkSession();
+  }, [checkSession]);
 
   return (
     <AuthContext.Provider value={{ 
@@ -106,7 +134,9 @@ export const AuthProvider = ({ children }) => {
       login, 
       logout, 
       checkSession,
-      apiUrl: API_URL
+      refreshSession,
+      apiUrl: API_URL,
+      isAuthenticated: !!user
     }}>
       {children}
     </AuthContext.Provider>

@@ -1,4 +1,4 @@
-// ===== routes/orders.js ===== (VERSION OPTIMISÉE - CORRIGÉE)
+// ===== routes/orders.js ===== (VERSION CORRIGÉE)
 const express = require('express');
 const router = express.Router();
 const { getPool } = require('../config/database');
@@ -7,11 +7,9 @@ const { validateOrder } = require('../middleware/validation');
 const rateLimiter = require('../middleware/rateLimiter');
 const { checkServiceAvailability } = require('../middleware/checkServiceAvailability');
 const { notifyAdmins } = require('../config/websocket');
-const { authenticateToken, requireAdmin } = require('../middleware/auth'); // ✅ CORRIGÉ
 
 // ===== CONSTANTES =====
 const VALID_ORDER_TYPES = ['delivery', 'takeaway'];
-const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'delivering', 'ready', 'completed', 'cancelled'];
 const TIME_BUFFER_MS = 5 * 60 * 1000; // 5 minutes
 const DEFAULT_DELIVERY_FEE = 5;
 const DEFAULT_MIN_ORDER = 30;
@@ -336,258 +334,49 @@ router.post('/',
 );
 
 /**
- * PUT /api/orders/:id/status - Mettre à jour le statut (ADMIN ONLY)
+ * GET /api/orders/:id - Récupérer une commande par ID (pour le suivi client)
  */
-router.put('/:id/status', 
-  authenticateToken,  // ✅ CORRIGÉ
-  requireAdmin,       // ✅ CORRIGÉ
-  async (req, res, next) => {
-    try {
-      const pool = getPool();
-      const { status } = req.body;
-      const orderId = parseInt(req.params.id);
+router.get('/:id', async (req, res, next) => {
+  try {
+    const pool = getPool();
+    const orderId = parseInt(req.params.id);
 
-      if (!orderId || orderId <= 0) {
-        return res.status(400).json({ 
-          success: false,
-          error: 'ID de commande invalide'
-        });
-      }
-
-      if (!VALID_STATUSES.includes(status)) {
-        return res.status(400).json({ 
-          success: false,
-          error: `Statut invalide. Valeurs autorisées: ${VALID_STATUSES.join(', ')}`
-        });
-      }
-
-      // Récupérer les infos de la commande
-      const [orders] = await pool.query(
-        'SELECT customer_email, customer_name, status as current_status FROM orders WHERE id = ?',
-        [orderId]
-      );
-
-      if (orders.length === 0) {
-        return res.status(404).json({ 
-          success: false,
-          error: 'Commande non trouvée'
-        });
-      }
-
-      const { customer_email, customer_name, current_status } = orders[0];
-
-      // Éviter les mises à jour inutiles
-      if (current_status === status) {
-        return res.json({
-          success: true,
-          message: 'Le statut est déjà à jour'
-        });
-      }
-
-      // Mise à jour du statut
-      await pool.query(
-        'UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?',
-        [status, orderId]
-      );
-
-      // Email de notification
-      const emailResult = await sendOrderStatusEmail(
-        customer_email,
-        customer_name,
-        orderId,
-        status
-      );
-
-      if (!emailResult.success) {
-        console.warn(
-          `⚠️  Email de statut non envoyé pour commande #${orderId}:`,
-          emailResult.error
-        );
-      }
-
-      // Notification WebSocket
-      notifyAdmins('order_updated', {
-        order: {
-          id: orderId,
-          status
-        }
+    if (!orderId || orderId <= 0) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'ID de commande invalide'
       });
-
-      res.json({
-        success: true,
-        message: 'Statut mis à jour avec succès'
-      });
-
-    } catch (error) {
-      next(error);
     }
-  }
-);
 
-/**
- * GET /api/admin/orders - Liste des commandes (ADMIN ONLY)
- */
-router.get('/admin/orders',
-  authenticateToken,  // ✅ CORRIGÉ
-  requireAdmin,       // ✅ CORRIGÉ
-  async (req, res, next) => {
-    try {
-      const pool = getPool();
-      const { 
-        status, 
-        delivery_date, 
-        date_from, 
-        date_to, 
-        order_type,
-        page = 1,
-        limit = 50
-      } = req.query;
+    const [orders] = await pool.query(
+      'SELECT * FROM orders WHERE id = ?',
+      [orderId]
+    );
 
-      const offset = (parseInt(page) - 1) * parseInt(limit);
-
-      // Requête principale (sans GROUP_CONCAT pour la performance)
-      let query = `
-        SELECT 
-          o.id,
-          o.order_type,
-          o.customer_name,
-          o.customer_email,
-          o.customer_phone,
-          o.delivery_address,
-          DATE_FORMAT(o.delivery_date, '%Y-%m-%d') as delivery_date,
-          TIME_FORMAT(o.delivery_time, '%H:%i') as delivery_time,
-          o.total_amount,
-          o.delivery_fee,
-          o.status,
-          o.payment_status,
-          o.payment_method,
-          o.notes,
-          o.created_at,
-          COUNT(oi.id) as items_count
-        FROM orders o
-        LEFT JOIN order_items oi ON o.id = oi.order_id
-        WHERE 1=1
-      `;
-
-      const params = [];
-      const countParams = [];
-
-      if (status) {
-        query += ' AND o.status = ?';
-        params.push(status);
-        countParams.push(status);
-      }
-
-      if (order_type) {
-        query += ' AND o.order_type = ?';
-        params.push(order_type);
-        countParams.push(order_type);
-      }
-
-      if (delivery_date) {
-        query += ' AND o.delivery_date = ?';
-        params.push(delivery_date);
-        countParams.push(delivery_date);
-      }
-
-      if (date_from) {
-        query += ' AND o.delivery_date >= ?';
-        params.push(date_from);
-        countParams.push(date_from);
-      }
-
-      if (date_to) {
-        query += ' AND o.delivery_date <= ?';
-        params.push(date_to);
-        countParams.push(date_to);
-      }
-
-      query += ` 
-        GROUP BY o.id 
-        ORDER BY o.delivery_date DESC, o.delivery_time DESC 
-        LIMIT ? OFFSET ?
-      `;
-      params.push(parseInt(limit), offset);
-
-      // Compter le total
-      let countQuery = query.replace(/SELECT.*FROM/s, 'SELECT COUNT(DISTINCT o.id) as total FROM');
-      countQuery = countQuery.replace(/GROUP BY.*$/s, '');
-      countQuery = countQuery.replace(/LIMIT.*$/s, '');
-
-      const [orders] = await pool.query(query, params);
-      const [[{ total }]] = await pool.query(countQuery, countParams);
-
-      res.json({
-        success: true,
-        data: orders,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / parseInt(limit))
-        }
+    if (orders.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Commande non trouvée' 
       });
-
-    } catch (error) {
-      next(error);
     }
+
+    const [items] = await pool.query(`
+      SELECT oi.*, p.name, p.description 
+      FROM order_items oi
+      JOIN products p ON oi.product_id = p.id
+      WHERE oi.order_id = ?
+    `, [orderId]);
+
+    res.json({ 
+      success: true,
+      order: orders[0], 
+      items 
+    });
+
+  } catch (error) {
+    next(error);
   }
-);
-
-/**
- * GET /api/orders/stats/by-timeslot - Statistiques par créneau (ADMIN ONLY)
- */
-router.get('/stats/by-timeslot',
-  authenticateToken,  // ✅ CORRIGÉ
-  requireAdmin,       // ✅ CORRIGÉ
-  async (req, res, next) => {
-    try {
-      const pool = getPool();
-      const { date_from, date_to, order_type } = req.query;
-
-      let query = `
-        SELECT 
-          DATE_FORMAT(delivery_date, '%Y-%m-%d') as date,
-          TIME_FORMAT(delivery_time, '%H:%i') as time_slot,
-          order_type,
-          COUNT(*) as order_count,
-          SUM(total_amount) as total_revenue,
-          AVG(total_amount) as avg_order_value
-        FROM orders
-        WHERE status NOT IN ('cancelled')
-      `;
-
-      const params = [];
-
-      if (date_from) {
-        query += ' AND delivery_date >= ?';
-        params.push(date_from);
-      }
-
-      if (date_to) {
-        query += ' AND delivery_date <= ?';
-        params.push(date_to);
-      }
-
-      if (order_type) {
-        query += ' AND order_type = ?';
-        params.push(order_type);
-      }
-
-      query += ' GROUP BY date, time_slot, order_type ORDER BY date ASC, time_slot ASC';
-
-      const [stats] = await pool.query(query, params);
-
-      res.json({
-        success: true,
-        data: stats
-      });
-
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+});
 
 // ===== FONCTION RÉUTILISABLE POUR STRIPE =====
 

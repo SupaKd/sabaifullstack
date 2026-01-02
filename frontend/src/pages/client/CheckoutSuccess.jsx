@@ -1,8 +1,8 @@
-// ===== src/pages/client/CheckoutSuccess.jsx ===== (VERSION avec Lucide React)
-import { useState, useEffect } from 'react';
+// ===== src/pages/client/CheckoutSuccess.jsx ===== (VERSION CORRIGÉE)
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-import { CheckCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import api from '../../services/api';
 
 const CheckoutSuccess = () => {
@@ -13,47 +13,49 @@ const CheckoutSuccess = () => {
   const [loading, setLoading] = useState(true);
   const [orderId, setOrderId] = useState(null);
   const [error, setError] = useState(null);
+  
+  // ✅ CORRECTION: useRef pour éviter les doubles appels
+  const hasVerified = useRef(false);
+  const hasCleared = useRef(false);
 
   useEffect(() => {
-    let isMounted = true;
+    // ✅ Éviter les doubles exécutions
+    if (hasVerified.current) return;
+    hasVerified.current = true;
 
     const verifyPayment = async () => {
       const sessionId = searchParams.get('session_id');
       
       if (!sessionId) {
-        if (isMounted) {
-          setError('Session invalide');
-          setLoading(false);
-        }
+        setError('Session invalide');
+        setLoading(false);
         return;
       }
 
       try {
         const data = await api.verifyPayment(sessionId);
 
-        if (!isMounted) return;
-
         if (data.success) {
           setOrderId(data.order_id);
-          clearCart();
+          
+          // ✅ CORRECTION: Vider le panier une seule fois
+          if (!hasCleared.current) {
+            hasCleared.current = true;
+            clearCart();
+          }
+          
           setLoading(false);
         } else {
           throw new Error(data.error || 'Erreur lors de la vérification du paiement');
         }
       } catch (err) {
-        if (isMounted) {
-          console.error('Erreur vérification paiement:', err);
-          setError(err.message);
-          setLoading(false);
-        }
+        console.error('Erreur vérification paiement:', err);
+        setError(err.message);
+        setLoading(false);
       }
     };
 
     verifyPayment();
-
-    return () => {
-      isMounted = false;
-    };
   }, [searchParams, clearCart]);
 
   if (loading) {
@@ -79,7 +81,10 @@ const CheckoutSuccess = () => {
     return (
       <div className="checkout-success__container">
         <div className="checkout-success__content">
-          <div className="checkout-success__icon-error">❌</div>
+          <AlertCircle 
+            size={64} 
+            className="checkout-success__icon-error"
+          />
           <h2 className="checkout-success__title-error">Erreur</h2>
           <p className="checkout-success__text-error">{error}</p>
           <button 
